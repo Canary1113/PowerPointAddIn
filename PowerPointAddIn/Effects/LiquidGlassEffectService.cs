@@ -176,7 +176,7 @@ namespace PowerPointAddIn.Effects
             shape.Shadow.OffsetX = 1.5f;
             shape.Shadow.OffsetY = 1.5f;
             shape.Shadow.Transparency = 0.80f;
-            shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(191, 191, 191));
+            shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(150, 150, 150));
             shape.Shadow.Size = 1.01f;
             shape.Shadow.Blur = 0f;
         }
