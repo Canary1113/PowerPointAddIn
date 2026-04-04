@@ -182,6 +182,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="Effects\LiquidGlassEffectService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -212,6 +213,8 @@
     <Compile Include="ThisAddIn.Designer.cs">
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
     </Compile>
+    <Compile Include="UI\LiquidGlassRibbon.cs" />
+    <EmbeddedResource Include="UI\LiquidGlassRibbon.xml" />
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <PropertyGroup>

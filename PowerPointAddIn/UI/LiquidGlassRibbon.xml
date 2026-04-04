@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="tabPPTAssistant" label="PPT Assistant">
+        <group id="groupLiquidGlass" label="Liquid Glass">
+          <button
+            id="buttonApplyLiquidGlass"
+            label="Apply Liquid Glass"
+            size="large"
+            imageMso="ShapesFillColorPicker"
+            onAction="OnApplyLiquidGlass"
+            screentip="Apply a liquid-glass look"
+            supertip="Sets selected shapes to slide-background fill, bright outline, glow, and bevel." />
+          <button
+            id="buttonApplyLiquidGlassDebug"
+            label="Debug Apply"
+            size="normal"
+            imageMso="AnimationPreview"
+            onAction="OnApplyLiquidGlassDebug"
+            screentip="Apply with debug prompts"
+            supertip="Shows message boxes between key steps to help locate freezes or crashes." />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
