@@ -47,7 +47,7 @@ namespace PowerPointAddIn.Effects
                 throw new InvalidOperationException("The selected picture must be on a slide.");
             }
 
-            string tempFolder = Path.Combine(Path.GetTempPath(), "PPTAssistant");
+            string tempFolder = GetWorkingFolder();
             Directory.CreateDirectory(tempFolder);
             CleanupOldFiles(tempFolder);
 
@@ -78,6 +78,21 @@ namespace PowerPointAddIn.Effects
 
             slide.FollowMasterBackground = MsoTriState.msoFalse;
             slide.Background.Fill.UserPicture(blurredPath);
+        }
+
+        private static string GetWorkingFolder()
+        {
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string repoRoot = Path.GetFullPath(Path.Combine(baseDirectory, "..", "..", ".."));
+            string repoMarker = Path.Combine(repoRoot, "PowerPointAddIn.slnx");
+            string projectMarker = Path.Combine(repoRoot, "PowerPointAddIn", "PowerPointAddIn.csproj");
+
+            if (File.Exists(repoMarker) && File.Exists(projectMarker))
+            {
+                return Path.Combine(repoRoot, "RuntimeTemp", "PPTAssistant");
+            }
+
+            return Path.Combine(Path.GetTempPath(), "PPTAssistant");
         }
 
         private static bool IsSupportedPicture(PowerPoint.Shape shape)
