@@ -177,13 +177,9 @@ namespace PowerPointAddIn.Effects
         {
             shape.Shadow.Visible = MsoTriState.msoTrue;
             shape.Shadow.Style = MsoShadowStyle.msoShadowStyleOuterShadow;
-            shape.Shadow.Type = MsoShadowType.msoShadow5;
-            shape.Shadow.OffsetX = 0f;
-            shape.Shadow.OffsetY = 0f;
+            shape.Shadow.Type = MsoShadowType.msoShadow25;
             shape.Shadow.Transparency = 0.80f;
             shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(shadowColor);
-            shape.Shadow.Size = 1.01f;
-            shape.Shadow.Blur = 0f;
         }
 
         private static void ApplyBevel(PowerPoint.Shape shape)
