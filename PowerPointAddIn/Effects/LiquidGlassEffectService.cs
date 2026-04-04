@@ -8,8 +8,9 @@ namespace PowerPointAddIn.Effects
 {
     internal sealed class LiquidGlassEffectService
     {
-        private static readonly Color DarkShadowColor = Color.FromArgb(105, 105, 105);
-        private static readonly Color LightShadowColor = Color.FromArgb(210, 210, 210);
+        private static readonly Color StandardShadowColor = Color.FromArgb(105, 105, 105);
+        private static readonly Color WhiteGlassShadowColor = Color.FromArgb(125, 125, 125);
+        private static readonly Color BlackGlassShadowColor = Color.FromArgb(190, 190, 190);
         private readonly PowerPoint.Application application;
 
         public LiquidGlassEffectService(PowerPoint.Application application)
@@ -114,7 +115,7 @@ namespace PowerPointAddIn.Effects
             ClearOutline(shape);
             ClearEffects(shape);
             ApplyBevel(shape);
-            ApplyShadow(shape, DarkShadowColor);
+            ApplyShadow(shape, StandardShadowColor);
         }
 
         private static void ApplyLayeredGlass(PowerPoint.Shape shape, Color overlayColor)
@@ -152,7 +153,8 @@ namespace PowerPointAddIn.Effects
 
             PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
-            ApplyShadow(grouped, overlayColor == Color.Black ? LightShadowColor : DarkShadowColor);
+            ApplyBevel(grouped);
+            ApplyShadow(grouped, overlayColor == Color.Black ? BlackGlassShadowColor : WhiteGlassShadowColor);
         }
 
         private static void ApplyBackgroundFill(PowerPoint.Shape shape)
