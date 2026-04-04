@@ -11,7 +11,8 @@ namespace PowerPointAddIn.Effects
     internal sealed class BackgroundImageService
     {
         private const string GeneratedForegroundTag = "PPTAssistantForeground";
-        private const int RenderScale = 2;
+        private const int RenderScale = 4;
+        private const float BackgroundBlurAmount = 10f;
         private readonly PowerPoint.Application application;
 
         public BackgroundImageService(PowerPoint.Application application)
@@ -49,14 +50,12 @@ namespace PowerPointAddIn.Effects
             Directory.CreateDirectory(tempFolder);
             CleanupOldFiles(tempFolder);
 
-            string sourcePath = Path.Combine(tempFolder, $"source-{Guid.NewGuid():N}.png");
             string clearFullPath = Path.Combine(tempFolder, $"clear-full-{Guid.NewGuid():N}.png");
             string blurredPath = Path.Combine(tempFolder, $"blur-{Guid.NewGuid():N}.png");
 
-            selectedShape.Export(sourcePath, PowerPoint.PpShapeFormat.ppShapeFormatPNG);
             float slideWidth = application.ActivePresentation.PageSetup.SlideWidth;
             float slideHeight = application.ActivePresentation.PageSetup.SlideHeight;
-            CreateSlideSizedImage(sourcePath, clearFullPath, slideWidth, slideHeight);
+            ExportSlideSizedImage(selectedShape, clearFullPath, slideWidth, slideHeight);
             CreateBlurredCopy(clearFullPath, blurredPath);
 
             RemoveGeneratedForegrounds(slide);
@@ -122,20 +121,16 @@ namespace PowerPointAddIn.Effects
             }
         }
 
-        private static void CreateSlideSizedImage(string sourcePath, string outputPath, float slideWidth, float slideHeight)
+        private static void ExportSlideSizedImage(PowerPoint.Shape sourceShape, string outputPath, float slideWidth, float slideHeight)
         {
             int pixelWidth = Math.Max(1, (int)Math.Round(slideWidth * RenderScale));
             int pixelHeight = Math.Max(1, (int)Math.Round(slideHeight * RenderScale));
-
-            using (var sourceBitmap = new Bitmap(sourcePath))
-            using (var workingBitmap = new Bitmap(pixelWidth, pixelHeight))
-            using (Graphics graphics = Graphics.FromImage(workingBitmap))
-            {
-                graphics.Clear(Color.Transparent);
-                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                graphics.DrawImage(sourceBitmap, 0, 0, pixelWidth, pixelHeight);
-                workingBitmap.Save(outputPath, ImageFormat.Png);
-            }
+            sourceShape.Export(
+                outputPath,
+                PowerPoint.PpShapeFormat.ppShapeFormatPNG,
+                pixelWidth,
+                pixelHeight,
+                PowerPoint.PpExportMode.ppScaleXY);
         }
 
         private static void CreateBlurredCopy(string sourcePath, string outputPath)
@@ -143,13 +138,12 @@ namespace PowerPointAddIn.Effects
             using (var sourceBitmap = new Bitmap(sourcePath))
             using (var workingBitmap = new Bitmap(sourceBitmap))
             {
-                const int radius = 10;
-                ApplyBoxBlur(workingBitmap, radius);
+                ApplyGaussianBlur(workingBitmap, BackgroundBlurAmount);
                 workingBitmap.Save(outputPath, ImageFormat.Png);
             }
         }
 
-        private static void ApplyBoxBlur(Bitmap bitmap, int radius)
+        private static void ApplyGaussianBlur(Bitmap bitmap, float blurAmount)
         {
             Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
             BitmapData bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
@@ -159,19 +153,21 @@ namespace PowerPointAddIn.Effects
             byte[] source = new byte[byteCount];
             byte[] temp = new byte[byteCount];
             byte[] blurred = new byte[byteCount];
+            float sigma = Math.Max(0.5f, blurAmount / 2.5f);
+            float[] kernel = CreateGaussianKernel(sigma);
 
             Marshal.Copy(bitmapData.Scan0, source, 0, byteCount);
 
-            HorizontalBlur(source, temp, bitmap.Width, bitmap.Height, stride, radius);
-            VerticalBlur(temp, blurred, bitmap.Width, bitmap.Height, stride, radius);
+            HorizontalBlur(source, temp, bitmap.Width, bitmap.Height, stride, kernel);
+            VerticalBlur(temp, blurred, bitmap.Width, bitmap.Height, stride, kernel);
 
             Marshal.Copy(blurred, 0, bitmapData.Scan0, byteCount);
             bitmap.UnlockBits(bitmapData);
         }
 
-        private static void HorizontalBlur(byte[] source, byte[] destination, int width, int height, int stride, int radius)
+        private static void HorizontalBlur(byte[] source, byte[] destination, int width, int height, int stride, float[] kernel)
         {
-            int kernelSize = radius * 2 + 1;
+            int radius = kernel.Length / 2;
 
             for (int y = 0; y < height; y++)
             {
@@ -179,60 +175,89 @@ namespace PowerPointAddIn.Effects
 
                 for (int x = 0; x < width; x++)
                 {
-                    int blue = 0;
-                    int green = 0;
-                    int red = 0;
-                    int alpha = 0;
+                    float blue = 0f;
+                    float green = 0f;
+                    float red = 0f;
+                    float alpha = 0f;
 
                     for (int offset = -radius; offset <= radius; offset++)
                     {
                         int sampleX = Math.Max(0, Math.Min(width - 1, x + offset));
                         int index = row + sampleX * 4;
-                        blue += source[index];
-                        green += source[index + 1];
-                        red += source[index + 2];
-                        alpha += source[index + 3];
+                        float weight = kernel[offset + radius];
+                        blue += source[index] * weight;
+                        green += source[index + 1] * weight;
+                        red += source[index + 2] * weight;
+                        alpha += source[index + 3] * weight;
                     }
 
                     int destinationIndex = row + x * 4;
-                    destination[destinationIndex] = (byte)(blue / kernelSize);
-                    destination[destinationIndex + 1] = (byte)(green / kernelSize);
-                    destination[destinationIndex + 2] = (byte)(red / kernelSize);
-                    destination[destinationIndex + 3] = (byte)(alpha / kernelSize);
+                    destination[destinationIndex] = ToByte(blue);
+                    destination[destinationIndex + 1] = ToByte(green);
+                    destination[destinationIndex + 2] = ToByte(red);
+                    destination[destinationIndex + 3] = ToByte(alpha);
                 }
             }
         }
 
-        private static void VerticalBlur(byte[] source, byte[] destination, int width, int height, int stride, int radius)
+        private static void VerticalBlur(byte[] source, byte[] destination, int width, int height, int stride, float[] kernel)
         {
-            int kernelSize = radius * 2 + 1;
+            int radius = kernel.Length / 2;
 
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    int blue = 0;
-                    int green = 0;
-                    int red = 0;
-                    int alpha = 0;
+                    float blue = 0f;
+                    float green = 0f;
+                    float red = 0f;
+                    float alpha = 0f;
 
                     for (int offset = -radius; offset <= radius; offset++)
                     {
                         int sampleY = Math.Max(0, Math.Min(height - 1, y + offset));
                         int index = sampleY * stride + x * 4;
-                        blue += source[index];
-                        green += source[index + 1];
-                        red += source[index + 2];
-                        alpha += source[index + 3];
+                        float weight = kernel[offset + radius];
+                        blue += source[index] * weight;
+                        green += source[index + 1] * weight;
+                        red += source[index + 2] * weight;
+                        alpha += source[index + 3] * weight;
                     }
 
                     int destinationIndex = y * stride + x * 4;
-                    destination[destinationIndex] = (byte)(blue / kernelSize);
-                    destination[destinationIndex + 1] = (byte)(green / kernelSize);
-                    destination[destinationIndex + 2] = (byte)(red / kernelSize);
-                    destination[destinationIndex + 3] = (byte)(alpha / kernelSize);
+                    destination[destinationIndex] = ToByte(blue);
+                    destination[destinationIndex + 1] = ToByte(green);
+                    destination[destinationIndex + 2] = ToByte(red);
+                    destination[destinationIndex + 3] = ToByte(alpha);
                 }
             }
+        }
+
+        private static float[] CreateGaussianKernel(float sigma)
+        {
+            int radius = Math.Max(1, (int)Math.Ceiling(sigma * 3f));
+            float[] kernel = new float[radius * 2 + 1];
+            float sigmaSquaredTimesTwo = 2f * sigma * sigma;
+            float totalWeight = 0f;
+
+            for (int offset = -radius; offset <= radius; offset++)
+            {
+                float weight = (float)Math.Exp(-(offset * offset) / sigmaSquaredTimesTwo);
+                kernel[offset + radius] = weight;
+                totalWeight += weight;
+            }
+
+            for (int index = 0; index < kernel.Length; index++)
+            {
+                kernel[index] /= totalWeight;
+            }
+
+            return kernel;
+        }
+
+        private static byte ToByte(float value)
+        {
+            return (byte)Math.Max(0, Math.Min(255, (int)Math.Round(value)));
         }
     }
 }
