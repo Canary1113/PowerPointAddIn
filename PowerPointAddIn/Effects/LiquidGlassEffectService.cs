@@ -148,10 +148,11 @@ namespace PowerPointAddIn.Effects
             overlay.Top = shape.Top;
             overlay.Width = shape.Width;
             overlay.Height = shape.Height;
-            ApplyShadow(overlay, overlayColor == Color.Black ? LightShadowColor : DarkShadowColor);
+            overlay.Shadow.Visible = MsoTriState.msoFalse;
 
             PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
+            ApplyShadow(grouped, overlayColor == Color.Black ? LightShadowColor : DarkShadowColor);
         }
 
         private static void ApplyBackgroundFill(PowerPoint.Shape shape)
