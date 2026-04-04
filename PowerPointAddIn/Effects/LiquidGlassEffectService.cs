@@ -9,7 +9,6 @@ namespace PowerPointAddIn.Effects
     internal sealed class LiquidGlassEffectService
     {
         private const string GlassHelperTag = "PPTAssistantGlassHelper";
-        private const string GlassSourceIdTag = "PPTAssistantGlassSourceId";
         private readonly PowerPoint.Application application;
 
         public LiquidGlassEffectService(PowerPoint.Application application)
@@ -69,9 +68,9 @@ namespace PowerPointAddIn.Effects
 
             DebugStep(debugMode, $"Applying liquid-glass effect to: {shape.Name}");
 
+            RemoveLegacyHelperOutlines(shape);
             ApplyBackgroundFill(shape);
             ApplyHighlightOutline(shape);
-            ApplyDirectionalOutline(shape);
             ApplyBevel(shape);
             ApplyShadow(shape);
 
@@ -118,12 +117,13 @@ namespace PowerPointAddIn.Effects
             shape.Line.Weight = 0.5f;
             shape.Line.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
             shape.Line.BackColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            shape.Line.Transparency = 0.10f;
+            shape.Line.Transparency = 0.35f;
             shape.Glow.Radius = 0f;
             shape.Glow.Transparency = 1f;
+            shape.SoftEdge.Radius = 0f;
         }
 
-        private static void ApplyDirectionalOutline(PowerPoint.Shape shape)
+        private static void RemoveLegacyHelperOutlines(PowerPoint.Shape shape)
         {
             PowerPoint.Slide slide = shape.Parent as PowerPoint.Slide;
             if (slide == null)
@@ -131,47 +131,14 @@ namespace PowerPointAddIn.Effects
                 return;
             }
 
-            string sourceId = shape.Id.ToString();
-            RemoveExistingDirectionalOutlines(slide, sourceId);
-
-            PowerPoint.ShapeRange duplicateRange = shape.Duplicate();
-            PowerPoint.Shape helper = duplicateRange[1];
-            helper.Fill.Visible = MsoTriState.msoFalse;
-            helper.Line.Visible = MsoTriState.msoTrue;
-            helper.Line.Style = MsoLineStyle.msoLineSingle;
-            helper.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
-            helper.Line.InsetPen = MsoTriState.msoTrue;
-            helper.Line.Weight = 0.5f;
-            helper.Line.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            helper.Line.BackColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            helper.Line.Transparency = 0.60f;
-            helper.Left = shape.Left - 0.35f;
-            helper.Top = shape.Top - 0.35f;
-            helper.Name = $"PPTAssistant Glass Helper {sourceId}";
-            helper.Tags.Add(GlassHelperTag, "1");
-            helper.Tags.Add(GlassSourceIdTag, sourceId);
-            helper.ZOrder(MsoZOrderCmd.msoSendBackward);
-        }
-
-        private static void RemoveExistingDirectionalOutlines(PowerPoint.Slide slide, string sourceId)
-        {
             for (int index = slide.Shapes.Count; index >= 1; index--)
             {
                 PowerPoint.Shape candidate = slide.Shapes[index];
-                if (candidate.Tags[GlassHelperTag] == "1" && candidate.Tags[GlassSourceIdTag] == sourceId)
+                if (candidate.Tags[GlassHelperTag] == "1")
                 {
                     candidate.Delete();
                 }
             }
-        }
-
-        private static void ApplyBevel(PowerPoint.Shape shape)
-        {
-            shape.ThreeD.Visible = MsoTriState.msoTrue;
-            shape.ThreeD.BevelTopType = MsoBevelType.msoBevelCircle;
-            shape.ThreeD.BevelTopInset = 5f;
-            shape.ThreeD.BevelTopDepth = 1f;
-            shape.ThreeD.ContourWidth = 0f;
         }
 
         private static void ApplyShadow(PowerPoint.Shape shape)
@@ -183,6 +150,15 @@ namespace PowerPointAddIn.Effects
             shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(191, 191, 191));
             shape.Shadow.Size = 1.01f;
             shape.Shadow.Blur = 0f;
+        }
+
+        private static void ApplyBevel(PowerPoint.Shape shape)
+        {
+            shape.ThreeD.Visible = MsoTriState.msoTrue;
+            shape.ThreeD.BevelTopType = MsoBevelType.msoBevelCircle;
+            shape.ThreeD.BevelTopInset = 5f;
+            shape.ThreeD.BevelTopDepth = 1f;
+            shape.ThreeD.ContourWidth = 0f;
         }
 
         private static float Clamp(float value, float min, float max)

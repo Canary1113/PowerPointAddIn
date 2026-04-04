@@ -73,6 +73,7 @@ namespace PowerPointAddIn.Effects
 
             foreground.Name = $"PPTAssistant Foreground {DateTime.Now:HHmmss}";
             foreground.Tags.Add(GeneratedForegroundTag, "1");
+            foreground.Locked = MsoTriState.msoTrue;
             foreground.ZOrder(MsoZOrderCmd.msoSendToBack);
 
             slide.FollowMasterBackground = MsoTriState.msoFalse;
