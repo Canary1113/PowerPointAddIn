@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Office.Tools.Ribbon;
 using PowerPointAddIn.Effects;
@@ -48,6 +49,16 @@ namespace PowerPointAddIn.UI
             }
         }
 
+        private void buttonGlassWhite_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteLayeredGlass(Color.White);
+        }
+
+        private void buttonGlassBlack_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteLayeredGlass(Color.Black);
+        }
+
         private static void Execute(bool debugMode)
         {
             if (ThisAddIn.Instance == null)
@@ -73,6 +84,33 @@ namespace PowerPointAddIn.UI
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private static void ExecuteLayeredGlass(Color overlayColor)
+        {
+            if (ThisAddIn.Instance == null)
+            {
+                MessageBox.Show(
+                    "The add-in is not initialized yet.",
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                var service = new LiquidGlassEffectService(ThisAddIn.Instance.Application);
+                service.ApplyLayeredToSelection(debugMode: false, overlayColor);
             }
             catch (Exception ex)
             {

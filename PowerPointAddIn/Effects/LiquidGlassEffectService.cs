@@ -8,7 +8,6 @@ namespace PowerPointAddIn.Effects
 {
     internal sealed class LiquidGlassEffectService
     {
-        private const string GlassHelperTag = "PPTAssistantGlassHelper";
         private readonly PowerPoint.Application application;
 
         public LiquidGlassEffectService(PowerPoint.Application application)
@@ -17,6 +16,16 @@ namespace PowerPointAddIn.Effects
         }
 
         public int ApplyToSelection(bool debugMode)
+        {
+            return ApplyToSelection(debugMode, null);
+        }
+
+        public int ApplyLayeredToSelection(bool debugMode, Color overlayColor)
+        {
+            return ApplyToSelection(debugMode, overlayColor);
+        }
+
+        private int ApplyToSelection(bool debugMode, Color? overlayColor)
         {
             PowerPoint.DocumentWindow activeWindow = application.ActiveWindow;
             if (activeWindow == null)
@@ -35,7 +44,7 @@ namespace PowerPointAddIn.Effects
 
             for (int index = 1; index <= shapeRange.Count; index++)
             {
-                changedCount += ApplyToShapeRecursive(shapeRange[index], debugMode);
+                changedCount += ApplyToShapeRecursive(shapeRange[index], debugMode, overlayColor);
             }
 
             if (changedCount == 0)
@@ -46,19 +55,11 @@ namespace PowerPointAddIn.Effects
             return changedCount;
         }
 
-        private int ApplyToShapeRecursive(PowerPoint.Shape shape, bool debugMode)
+        private int ApplyToShapeRecursive(PowerPoint.Shape shape, bool debugMode, Color? overlayColor)
         {
             if (shape.Type == MsoShapeType.msoGroup)
             {
-                int groupCount = 0;
-                PowerPoint.GroupShapes groupItems = shape.GroupItems;
-
-                for (int index = 1; index <= groupItems.Count; index++)
-                {
-                    groupCount += ApplyToShapeRecursive(groupItems[index], debugMode);
-                }
-
-                return groupCount;
+                return 0;
             }
 
             if (!SupportsLiquidGlass(shape))
@@ -68,11 +69,14 @@ namespace PowerPointAddIn.Effects
 
             DebugStep(debugMode, $"Applying liquid-glass effect to: {shape.Name}");
 
-            RemoveLegacyHelperOutlines(shape);
-            ApplyBackgroundFill(shape);
-            ApplyHighlightOutline(shape);
-            ApplyBevel(shape);
-            ApplyShadow(shape);
+            if (overlayColor.HasValue)
+            {
+                ApplyLayeredGlass(shape, overlayColor.Value);
+            }
+            else
+            {
+                ApplyStandardGlass(shape);
+            }
 
             return 1;
         }
@@ -102,43 +106,68 @@ namespace PowerPointAddIn.Effects
             }
         }
 
+        private static void ApplyStandardGlass(PowerPoint.Shape shape)
+        {
+            ApplyBackgroundFill(shape);
+            ClearOutline(shape);
+            ClearEffects(shape);
+            ApplyBevel(shape);
+            ApplyShadow(shape);
+        }
+
+        private static void ApplyLayeredGlass(PowerPoint.Shape shape, Color overlayColor)
+        {
+            ApplyBackgroundFill(shape);
+            ClearOutline(shape);
+            ClearEffects(shape);
+            ApplyShadow(shape);
+
+            PowerPoint.Slide slide = shape.Parent as PowerPoint.Slide;
+            if (slide == null)
+            {
+                throw new InvalidOperationException("The selected shape must be on a slide.");
+            }
+
+            string groupKey = Guid.NewGuid().ToString("N");
+            shape.Name = $"PPTAssistant Base {groupKey}";
+
+            PowerPoint.Shape overlay = shape.Duplicate()[1];
+            overlay.Name = $"PPTAssistant Overlay {groupKey}";
+            overlay.Fill.Visible = MsoTriState.msoTrue;
+            overlay.Fill.Solid();
+            overlay.Fill.ForeColor.RGB = ColorTranslator.ToOle(overlayColor);
+            overlay.Fill.Transparency = 0.60f;
+            overlay.Line.Visible = MsoTriState.msoFalse;
+            overlay.Shadow.Visible = MsoTriState.msoFalse;
+            overlay.Glow.Radius = 0f;
+            overlay.Glow.Transparency = 1f;
+            overlay.SoftEdge.Radius = 0f;
+            overlay.ThreeD.Visible = MsoTriState.msoFalse;
+            overlay.Left = shape.Left;
+            overlay.Top = shape.Top;
+            overlay.Width = shape.Width;
+            overlay.Height = shape.Height;
+
+            PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
+            grouped.Name = $"PPTAssistant Glass {groupKey}";
+        }
+
         private static void ApplyBackgroundFill(PowerPoint.Shape shape)
         {
             shape.Fill.Visible = MsoTriState.msoTrue;
             shape.Fill.Background();
         }
 
-        private static void ApplyHighlightOutline(PowerPoint.Shape shape)
+        private static void ClearOutline(PowerPoint.Shape shape)
         {
-            shape.Line.Visible = MsoTriState.msoTrue;
-            shape.Line.Style = MsoLineStyle.msoLineSingle;
-            shape.Line.DashStyle = MsoLineDashStyle.msoLineSolid;
-            shape.Line.InsetPen = MsoTriState.msoTrue;
-            shape.Line.Weight = 0.5f;
-            shape.Line.ForeColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            shape.Line.BackColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            shape.Line.Transparency = 0.35f;
+            shape.Line.Visible = MsoTriState.msoFalse;
+        }
+
+        private static void ClearEffects(PowerPoint.Shape shape)
+        {
             shape.Glow.Radius = 0f;
             shape.Glow.Transparency = 1f;
             shape.SoftEdge.Radius = 0f;
-        }
-
-        private static void RemoveLegacyHelperOutlines(PowerPoint.Shape shape)
-        {
-            PowerPoint.Slide slide = shape.Parent as PowerPoint.Slide;
-            if (slide == null)
-            {
-                return;
-            }
-
-            for (int index = slide.Shapes.Count; index >= 1; index--)
-            {
-                PowerPoint.Shape candidate = slide.Shapes[index];
-                if (candidate.Tags[GlassHelperTag] == "1")
-                {
-                    candidate.Delete();
-                }
-            }
         }
 
         private static void ApplyShadow(PowerPoint.Shape shape)
@@ -156,14 +185,10 @@ namespace PowerPointAddIn.Effects
         {
             shape.ThreeD.Visible = MsoTriState.msoTrue;
             shape.ThreeD.BevelTopType = MsoBevelType.msoBevelCircle;
-            shape.ThreeD.BevelTopInset = 5f;
+            shape.ThreeD.BevelTopInset = 20f;
             shape.ThreeD.BevelTopDepth = 1f;
             shape.ThreeD.ContourWidth = 0f;
-        }
-
-        private static float Clamp(float value, float min, float max)
-        {
-            return Math.Max(min, Math.Min(max, value));
+            shape.ThreeD.PresetMaterial = MsoPresetMaterial.msoMaterialSoftEdge;
         }
 
         private static void DebugStep(bool enabled, string message)

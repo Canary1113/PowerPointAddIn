@@ -25,6 +25,8 @@ namespace PowerPointAddIn.UI
             this.tabAddIns = this.Factory.CreateRibbonTab();
             this.groupLiquidGlass = this.Factory.CreateRibbonGroup();
             this.buttonApplyLiquidGlass = this.Factory.CreateRibbonButton();
+            this.buttonGlassWhite = this.Factory.CreateRibbonButton();
+            this.buttonGlassBlack = this.Factory.CreateRibbonButton();
             this.buttonBackground = this.Factory.CreateRibbonButton();
             this.buttonApplyLiquidGlassDebug = this.Factory.CreateRibbonButton();
             this.tabAddIns.SuspendLayout();
@@ -41,6 +43,8 @@ namespace PowerPointAddIn.UI
             // groupLiquidGlass
             // 
             this.groupLiquidGlass.Items.Add(this.buttonApplyLiquidGlass);
+            this.groupLiquidGlass.Items.Add(this.buttonGlassWhite);
+            this.groupLiquidGlass.Items.Add(this.buttonGlassBlack);
             this.groupLiquidGlass.Items.Add(this.buttonBackground);
             this.groupLiquidGlass.Items.Add(this.buttonApplyLiquidGlassDebug);
             this.groupLiquidGlass.Label = "Add-In";
@@ -54,8 +58,30 @@ namespace PowerPointAddIn.UI
             this.buttonApplyLiquidGlass.Name = "buttonApplyLiquidGlass";
             this.buttonApplyLiquidGlass.ScreenTip = "Apply a glass look";
             this.buttonApplyLiquidGlass.ShowImage = true;
-            this.buttonApplyLiquidGlass.SuperTip = "Sets selected shapes to slide-background fill, highlight outline, glow, and soft shadow.";
+            this.buttonApplyLiquidGlass.SuperTip = "Applies background fill, bevel, and shadow to the selected shape.";
             this.buttonApplyLiquidGlass.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonApplyLiquidGlass_Click);
+            // 
+            // buttonGlassWhite
+            // 
+            this.buttonGlassWhite.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.buttonGlassWhite.OfficeImageId = "ColorWhite";
+            this.buttonGlassWhite.Label = "Glass White";
+            this.buttonGlassWhite.Name = "buttonGlassWhite";
+            this.buttonGlassWhite.ScreenTip = "Create a white glass overlay";
+            this.buttonGlassWhite.ShowImage = true;
+            this.buttonGlassWhite.SuperTip = "Duplicates the selected shape, overlays semi-transparent white, and groups the two shapes.";
+            this.buttonGlassWhite.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonGlassWhite_Click);
+            // 
+            // buttonGlassBlack
+            // 
+            this.buttonGlassBlack.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.buttonGlassBlack.OfficeImageId = "ColorBlack";
+            this.buttonGlassBlack.Label = "Glass Black";
+            this.buttonGlassBlack.Name = "buttonGlassBlack";
+            this.buttonGlassBlack.ScreenTip = "Create a black glass overlay";
+            this.buttonGlassBlack.ShowImage = true;
+            this.buttonGlassBlack.SuperTip = "Duplicates the selected shape, overlays semi-transparent black, and groups the two shapes.";
+            this.buttonGlassBlack.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonGlassBlack_Click);
             // 
             // buttonBackground
             // 
@@ -95,6 +121,8 @@ namespace PowerPointAddIn.UI
         internal Microsoft.Office.Tools.Ribbon.RibbonTab tabAddIns;
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupLiquidGlass;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonApplyLiquidGlass;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonGlassWhite;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonGlassBlack;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonBackground;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonApplyLiquidGlassDebug;
     }
