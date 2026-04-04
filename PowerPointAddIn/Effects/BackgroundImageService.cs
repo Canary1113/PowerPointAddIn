@@ -12,7 +12,7 @@ namespace PowerPointAddIn.Effects
     {
         private const string GeneratedForegroundTag = "PPTAssistantForeground";
         private const int RenderScale = 4;
-        private const float BackgroundBlurAmount = 10f;
+        private const float BackgroundBlurAmount = 20f;
         private readonly PowerPoint.Application application;
 
         public BackgroundImageService(PowerPoint.Application application)

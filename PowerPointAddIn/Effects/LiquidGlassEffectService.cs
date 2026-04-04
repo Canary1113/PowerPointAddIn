@@ -136,7 +136,7 @@ namespace PowerPointAddIn.Effects
             overlay.Fill.Visible = MsoTriState.msoTrue;
             overlay.Fill.Solid();
             overlay.Fill.ForeColor.RGB = ColorTranslator.ToOle(overlayColor);
-            overlay.Fill.Transparency = 0.60f;
+            overlay.Fill.Transparency = 0.75f;
             overlay.Line.Visible = MsoTriState.msoFalse;
             overlay.Shadow.Visible = MsoTriState.msoFalse;
             overlay.Glow.Radius = 0f;
