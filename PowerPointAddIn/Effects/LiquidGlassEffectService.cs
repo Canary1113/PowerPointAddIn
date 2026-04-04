@@ -69,7 +69,6 @@ namespace PowerPointAddIn.Effects
 
             ApplyBackgroundFill(shape);
             ApplyHighlightOutline(shape);
-            ApplyBevel(shape);
             ApplyShadow(shape);
 
             return 1;
@@ -124,21 +123,6 @@ namespace PowerPointAddIn.Effects
             shape.Glow.Transparency = 0.52f;
         }
 
-        private static void ApplyBevel(PowerPoint.Shape shape)
-        {
-            float baseSize = Math.Min(shape.Width, shape.Height);
-            float inset = Clamp(baseSize * 0.012f, 1.2f, 5f);
-            float depth = Clamp(baseSize * 0.02f, 1.8f, 8f);
-
-            shape.ThreeD.Visible = MsoTriState.msoTrue;
-            shape.ThreeD.BevelTopType = MsoBevelType.msoBevelRelaxedInset;
-            shape.ThreeD.BevelTopInset = inset;
-            shape.ThreeD.BevelTopDepth = depth;
-            shape.ThreeD.ContourWidth = Clamp(inset * 0.55f, 0.5f, 2.2f);
-            shape.ThreeD.ContourColor.RGB = ColorTranslator.ToOle(Color.FromArgb(255, 255, 255));
-            shape.ThreeD.PresetMaterial = MsoPresetMaterial.msoMaterialClear;
-        }
-
         private static void ApplyShadow(PowerPoint.Shape shape)
         {
             float baseSize = Math.Min(shape.Width, shape.Height);
@@ -167,10 +151,9 @@ namespace PowerPointAddIn.Effects
 
             MessageBox.Show(
                 message,
-                "Liquid Glass Debug",
+                "Apply Glass Debug",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
     }
 }
-

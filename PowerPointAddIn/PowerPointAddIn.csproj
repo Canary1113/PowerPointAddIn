@@ -182,6 +182,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="Effects\BackgroundImageService.cs" />
     <Compile Include="Effects\LiquidGlassEffectService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
@@ -214,7 +215,7 @@
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
     </Compile>
     <Compile Include="UI\PPTAssistantRibbon.cs">
-      <SubType>Code</SubType>
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\PPTAssistantRibbon.Designer.cs">
       <DependentUpon>PPTAssistantRibbon.cs</DependentUpon>

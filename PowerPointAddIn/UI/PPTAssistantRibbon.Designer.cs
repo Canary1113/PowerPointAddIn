@@ -25,6 +25,7 @@ namespace PowerPointAddIn.UI
             this.tabAddIns = this.Factory.CreateRibbonTab();
             this.groupLiquidGlass = this.Factory.CreateRibbonGroup();
             this.buttonApplyLiquidGlass = this.Factory.CreateRibbonButton();
+            this.buttonBackground = this.Factory.CreateRibbonButton();
             this.buttonApplyLiquidGlassDebug = this.Factory.CreateRibbonButton();
             this.tabAddIns.SuspendLayout();
             this.groupLiquidGlass.SuspendLayout();
@@ -40,24 +41,36 @@ namespace PowerPointAddIn.UI
             // groupLiquidGlass
             // 
             this.groupLiquidGlass.Items.Add(this.buttonApplyLiquidGlass);
+            this.groupLiquidGlass.Items.Add(this.buttonBackground);
             this.groupLiquidGlass.Items.Add(this.buttonApplyLiquidGlassDebug);
-            this.groupLiquidGlass.Label = "PPT Assistant";
+            this.groupLiquidGlass.Label = "Add-In";
             this.groupLiquidGlass.Name = "groupLiquidGlass";
             // 
             // buttonApplyLiquidGlass
             // 
             this.buttonApplyLiquidGlass.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.buttonApplyLiquidGlass.OfficeImageId = "ShapesFillColorPicker";
-            this.buttonApplyLiquidGlass.Label = "Apply Liquid Glass";
+            this.buttonApplyLiquidGlass.OfficeImageId = "ShapeQuickStylesGallery";
+            this.buttonApplyLiquidGlass.Label = "APPLY GLASS";
             this.buttonApplyLiquidGlass.Name = "buttonApplyLiquidGlass";
-            this.buttonApplyLiquidGlass.ScreenTip = "Apply a liquid-glass look";
+            this.buttonApplyLiquidGlass.ScreenTip = "Apply a glass look";
             this.buttonApplyLiquidGlass.ShowImage = true;
-            this.buttonApplyLiquidGlass.SuperTip = "Sets selected shapes to slide-background fill, bright outline, glow, and bevel.";
+            this.buttonApplyLiquidGlass.SuperTip = "Sets selected shapes to slide-background fill, highlight outline, glow, and soft shadow.";
             this.buttonApplyLiquidGlass.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonApplyLiquidGlass_Click);
+            // 
+            // buttonBackground
+            // 
+            this.buttonBackground.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.buttonBackground.OfficeImageId = "PictureInsertFromFile";
+            this.buttonBackground.Label = "Background";
+            this.buttonBackground.Name = "buttonBackground";
+            this.buttonBackground.ScreenTip = "Fill the slide with the selected picture";
+            this.buttonBackground.ShowImage = true;
+            this.buttonBackground.SuperTip = "Adds a sharp full-slide picture and sets a blurred copy as the slide background.";
+            this.buttonBackground.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonBackground_Click);
             // 
             // buttonApplyLiquidGlassDebug
             // 
-            this.buttonApplyLiquidGlassDebug.OfficeImageId = "AnimationPreview";
+            this.buttonApplyLiquidGlassDebug.OfficeImageId = "ReviewNewComment";
             this.buttonApplyLiquidGlassDebug.Label = "Debug Apply";
             this.buttonApplyLiquidGlassDebug.Name = "buttonApplyLiquidGlassDebug";
             this.buttonApplyLiquidGlassDebug.ScreenTip = "Apply with debug prompts";
@@ -82,6 +95,7 @@ namespace PowerPointAddIn.UI
         internal Microsoft.Office.Tools.Ribbon.RibbonTab tabAddIns;
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupLiquidGlass;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonApplyLiquidGlass;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonBackground;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonApplyLiquidGlassDebug;
     }
 }
