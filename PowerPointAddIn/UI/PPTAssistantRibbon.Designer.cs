@@ -50,7 +50,7 @@ namespace PowerPointAddIn.UI
             // 
             this.buttonApplyLiquidGlass.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.buttonApplyLiquidGlass.OfficeImageId = "ShapeQuickStylesGallery";
-            this.buttonApplyLiquidGlass.Label = "APPLY GLASS";
+            this.buttonApplyLiquidGlass.Label = "Apply Glass";
             this.buttonApplyLiquidGlass.Name = "buttonApplyLiquidGlass";
             this.buttonApplyLiquidGlass.ScreenTip = "Apply a glass look";
             this.buttonApplyLiquidGlass.ShowImage = true;

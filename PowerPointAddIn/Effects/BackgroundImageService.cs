@@ -11,6 +11,7 @@ namespace PowerPointAddIn.Effects
     internal sealed class BackgroundImageService
     {
         private const string GeneratedForegroundTag = "PPTAssistantForeground";
+        private const int RenderScale = 2;
         private readonly PowerPoint.Application application;
 
         public BackgroundImageService(PowerPoint.Application application)
@@ -49,18 +50,20 @@ namespace PowerPointAddIn.Effects
             CleanupOldFiles(tempFolder);
 
             string sourcePath = Path.Combine(tempFolder, $"source-{Guid.NewGuid():N}.png");
+            string clearFullPath = Path.Combine(tempFolder, $"clear-full-{Guid.NewGuid():N}.png");
             string blurredPath = Path.Combine(tempFolder, $"blur-{Guid.NewGuid():N}.png");
 
             selectedShape.Export(sourcePath, PowerPoint.PpShapeFormat.ppShapeFormatPNG);
-            CreateBlurredCopy(sourcePath, blurredPath);
-
-            RemoveGeneratedForegrounds(slide);
-
             float slideWidth = application.ActivePresentation.PageSetup.SlideWidth;
             float slideHeight = application.ActivePresentation.PageSetup.SlideHeight;
+            CreateSlideSizedImage(sourcePath, clearFullPath, slideWidth, slideHeight);
+            CreateBlurredCopy(clearFullPath, blurredPath);
+
+            RemoveGeneratedForegrounds(slide);
+            selectedShape.Delete();
 
             PowerPoint.Shape foreground = slide.Shapes.AddPicture(
-                sourcePath,
+                clearFullPath,
                 MsoTriState.msoFalse,
                 MsoTriState.msoTrue,
                 0f,
@@ -118,12 +121,28 @@ namespace PowerPointAddIn.Effects
             }
         }
 
+        private static void CreateSlideSizedImage(string sourcePath, string outputPath, float slideWidth, float slideHeight)
+        {
+            int pixelWidth = Math.Max(1, (int)Math.Round(slideWidth * RenderScale));
+            int pixelHeight = Math.Max(1, (int)Math.Round(slideHeight * RenderScale));
+
+            using (var sourceBitmap = new Bitmap(sourcePath))
+            using (var workingBitmap = new Bitmap(pixelWidth, pixelHeight))
+            using (Graphics graphics = Graphics.FromImage(workingBitmap))
+            {
+                graphics.Clear(Color.Transparent);
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.DrawImage(sourceBitmap, 0, 0, pixelWidth, pixelHeight);
+                workingBitmap.Save(outputPath, ImageFormat.Png);
+            }
+        }
+
         private static void CreateBlurredCopy(string sourcePath, string outputPath)
         {
             using (var sourceBitmap = new Bitmap(sourcePath))
             using (var workingBitmap = new Bitmap(sourceBitmap))
             {
-                int radius = Math.Max(4, Math.Min(24, (int)Math.Round(Math.Min(workingBitmap.Width, workingBitmap.Height) * 0.01)));
+                const int radius = 10;
                 ApplyBoxBlur(workingBitmap, radius);
                 workingBitmap.Save(outputPath, ImageFormat.Png);
             }
