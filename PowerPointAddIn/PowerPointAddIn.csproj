@@ -213,8 +213,12 @@
     <Compile Include="ThisAddIn.Designer.cs">
       <DependentUpon>ThisAddIn.Designer.xml</DependentUpon>
     </Compile>
-    <Compile Include="UI\LiquidGlassRibbon.cs" />
-    <EmbeddedResource Include="UI\LiquidGlassRibbon.xml" />
+    <Compile Include="UI\PPTAssistantRibbon.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UI\PPTAssistantRibbon.Designer.cs">
+      <DependentUpon>PPTAssistantRibbon.cs</DependentUpon>
+    </Compile>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <PropertyGroup>

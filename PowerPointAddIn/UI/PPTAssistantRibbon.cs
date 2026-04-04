@@ -1,50 +1,24 @@
 using System;
-using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
-using Microsoft.Office.Core;
+using Microsoft.Office.Tools.Ribbon;
 using PowerPointAddIn.Effects;
 
 namespace PowerPointAddIn.UI
 {
-    internal sealed class LiquidGlassRibbon : IRibbonExtensibility
+    public partial class PPTAssistantRibbon
     {
-        public string GetCustomUI(string ribbonId)
+        private void PPTAssistantRibbon_Load(object sender, RibbonUIEventArgs e)
         {
-            MessageBox.Show(
-                $"Ribbon XML requested for: {ribbonId}",
-                "PPT Assistant",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-            return GetResourceText("PowerPointAddIn.UI.LiquidGlassRibbon.xml");
         }
 
-        public void OnApplyLiquidGlass(IRibbonControl control)
+        private void buttonApplyLiquidGlass_Click(object sender, RibbonControlEventArgs e)
         {
             Execute(debugMode: false);
         }
 
-        public void OnApplyLiquidGlassDebug(IRibbonControl control)
+        private void buttonApplyLiquidGlassDebug_Click(object sender, RibbonControlEventArgs e)
         {
             Execute(debugMode: true);
-        }
-
-        private static string GetResourceText(string resourceName)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            {
-                if (stream == null)
-                {
-                    throw new InvalidOperationException("Ribbon XML resource was not found.");
-                }
-
-                using (var reader = new StreamReader(stream))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
         }
 
         private static void Execute(bool debugMode)
@@ -84,3 +58,4 @@ namespace PowerPointAddIn.UI
         }
     }
 }
+

@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 using System.Xml.Linq;
-using Microsoft.Office.Core;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 using Office = Microsoft.Office.Core;
-using PowerPointAddIn.UI;
 
 namespace PowerPointAddIn
 {
@@ -18,25 +15,10 @@ namespace PowerPointAddIn
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             Instance = this;
-            MessageBox.Show(
-                "PPT Assistant startup loaded.",
-                "PPT Assistant",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-        }
-
-        protected override IRibbonExtensibility CreateRibbonExtensibilityObject()
-        {
-            MessageBox.Show(
-                "PPT Assistant is creating the ribbon.",
-                "PPT Assistant",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-            return new LiquidGlassRibbon();
         }
 
         #region VSTO 生成的代码
