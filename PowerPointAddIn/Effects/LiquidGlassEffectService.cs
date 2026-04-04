@@ -8,9 +8,7 @@ namespace PowerPointAddIn.Effects
 {
     internal sealed class LiquidGlassEffectService
     {
-        private static readonly Color StandardShadowColor = Color.FromArgb(105, 105, 105);
-        private static readonly Color WhiteGlassShadowColor = Color.FromArgb(125, 125, 125);
-        private static readonly Color BlackGlassShadowColor = Color.FromArgb(190, 190, 190);
+        private static readonly Color UnifiedShadowColor = Color.FromArgb(115, 115, 115);
         private readonly PowerPoint.Application application;
 
         public LiquidGlassEffectService(PowerPoint.Application application)
@@ -115,7 +113,7 @@ namespace PowerPointAddIn.Effects
             ClearOutline(shape);
             ClearEffects(shape);
             ApplyBevel(shape);
-            ApplyShadow(shape, StandardShadowColor);
+            ApplyShadow(shape, UnifiedShadowColor);
         }
 
         private static void ApplyLayeredGlass(PowerPoint.Shape shape, Color overlayColor)
@@ -154,7 +152,7 @@ namespace PowerPointAddIn.Effects
             PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
             ApplyBevel(grouped);
-            ApplyShadow(grouped, overlayColor == Color.Black ? BlackGlassShadowColor : WhiteGlassShadowColor);
+            ApplyShadow(grouped, UnifiedShadowColor);
         }
 
         private static void ApplyBackgroundFill(PowerPoint.Shape shape)
@@ -188,7 +186,7 @@ namespace PowerPointAddIn.Effects
         {
             shape.ThreeD.Visible = MsoTriState.msoTrue;
             shape.ThreeD.BevelTopType = MsoBevelType.msoBevelCircle;
-            shape.ThreeD.BevelTopInset = 20f;
+            shape.ThreeD.BevelTopInset = 10f;
             shape.ThreeD.BevelTopDepth = 1f;
             shape.ThreeD.ContourWidth = 0f;
             shape.ThreeD.PresetMaterial = MsoPresetMaterial.msoMaterialSoftEdge;

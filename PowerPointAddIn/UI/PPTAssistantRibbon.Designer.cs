@@ -53,7 +53,7 @@ namespace PowerPointAddIn.UI
             // buttonApplyLiquidGlass
             // 
             this.buttonApplyLiquidGlass.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.buttonApplyLiquidGlass.OfficeImageId = "ObjectEffectsMenu";
+            this.buttonApplyLiquidGlass.OfficeImageId = "ShapeFillColorPicker";
             this.buttonApplyLiquidGlass.Label = "Transparent Glass";
             this.buttonApplyLiquidGlass.Name = "buttonApplyLiquidGlass";
             this.buttonApplyLiquidGlass.ScreenTip = "Apply a glass look";
