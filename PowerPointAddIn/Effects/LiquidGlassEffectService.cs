@@ -8,7 +8,8 @@ namespace PowerPointAddIn.Effects
 {
     internal sealed class LiquidGlassEffectService
     {
-        private static readonly Color ShadowColor = Color.FromArgb(90, 90, 90);
+        private static readonly Color DarkShadowColor = Color.FromArgb(105, 105, 105);
+        private static readonly Color LightShadowColor = Color.FromArgb(210, 210, 210);
         private readonly PowerPoint.Application application;
 
         public LiquidGlassEffectService(PowerPoint.Application application)
@@ -113,7 +114,7 @@ namespace PowerPointAddIn.Effects
             ClearOutline(shape);
             ClearEffects(shape);
             ApplyBevel(shape);
-            ApplyShadow(shape);
+            ApplyShadow(shape, DarkShadowColor);
         }
 
         private static void ApplyLayeredGlass(PowerPoint.Shape shape, Color overlayColor)
@@ -147,7 +148,7 @@ namespace PowerPointAddIn.Effects
             overlay.Top = shape.Top;
             overlay.Width = shape.Width;
             overlay.Height = shape.Height;
-            ApplyShadow(overlay);
+            ApplyShadow(overlay, overlayColor == Color.Black ? LightShadowColor : DarkShadowColor);
 
             PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
@@ -171,13 +172,15 @@ namespace PowerPointAddIn.Effects
             shape.SoftEdge.Radius = 0f;
         }
 
-        private static void ApplyShadow(PowerPoint.Shape shape)
+        private static void ApplyShadow(PowerPoint.Shape shape, Color shadowColor)
         {
             shape.Shadow.Visible = MsoTriState.msoTrue;
-            shape.Shadow.OffsetX = 1.5f;
-            shape.Shadow.OffsetY = 1.5f;
+            shape.Shadow.Style = MsoShadowStyle.msoShadowStyleOuterShadow;
+            shape.Shadow.Type = MsoShadowType.msoShadow5;
+            shape.Shadow.OffsetX = 0f;
+            shape.Shadow.OffsetY = 0f;
             shape.Shadow.Transparency = 0.80f;
-            shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(ShadowColor);
+            shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(shadowColor);
             shape.Shadow.Size = 1.01f;
             shape.Shadow.Blur = 0f;
         }
