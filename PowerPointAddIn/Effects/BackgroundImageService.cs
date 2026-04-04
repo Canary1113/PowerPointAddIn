@@ -11,8 +11,9 @@ namespace PowerPointAddIn.Effects
     internal sealed class BackgroundImageService
     {
         private const string GeneratedForegroundTag = "PPTAssistantForeground";
-        private const int RenderScale = 4;
-        private const float BackgroundBlurAmount = 20f;
+        private const int ForegroundRenderScale = 4;
+        private const int BlurWorkingScale = 2;
+        private const float BackgroundBlurAmount = 30f;
         private readonly PowerPoint.Application application;
 
         public BackgroundImageService(PowerPoint.Application application)
@@ -55,7 +56,7 @@ namespace PowerPointAddIn.Effects
 
             float slideWidth = application.ActivePresentation.PageSetup.SlideWidth;
             float slideHeight = application.ActivePresentation.PageSetup.SlideHeight;
-            ExportSlideSizedImage(selectedShape, clearFullPath, slideWidth, slideHeight);
+            ExportSlideSizedImage(selectedShape, clearFullPath, slideWidth, slideHeight, ForegroundRenderScale);
             CreateBlurredCopy(clearFullPath, blurredPath);
 
             RemoveGeneratedForegrounds(slide);
@@ -121,10 +122,15 @@ namespace PowerPointAddIn.Effects
             }
         }
 
-        private static void ExportSlideSizedImage(PowerPoint.Shape sourceShape, string outputPath, float slideWidth, float slideHeight)
+        private static void ExportSlideSizedImage(
+            PowerPoint.Shape sourceShape,
+            string outputPath,
+            float slideWidth,
+            float slideHeight,
+            int renderScale)
         {
-            int pixelWidth = Math.Max(1, (int)Math.Round(slideWidth * RenderScale));
-            int pixelHeight = Math.Max(1, (int)Math.Round(slideHeight * RenderScale));
+            int pixelWidth = Math.Max(1, (int)Math.Round(slideWidth * renderScale));
+            int pixelHeight = Math.Max(1, (int)Math.Round(slideHeight * renderScale));
             sourceShape.Export(
                 outputPath,
                 PowerPoint.PpShapeFormat.ppShapeFormatPNG,
@@ -136,11 +142,35 @@ namespace PowerPointAddIn.Effects
         private static void CreateBlurredCopy(string sourcePath, string outputPath)
         {
             using (var sourceBitmap = new Bitmap(sourcePath))
-            using (var workingBitmap = new Bitmap(sourceBitmap))
+            using (var workingBitmap = CreateBlurWorkingBitmap(sourceBitmap))
+            using (var blurredBitmap = new Bitmap(sourceBitmap.Width, sourceBitmap.Height))
+            using (Graphics graphics = Graphics.FromImage(blurredBitmap))
             {
-                ApplyGaussianBlur(workingBitmap, BackgroundBlurAmount);
-                workingBitmap.Save(outputPath, ImageFormat.Png);
+                ApplyGaussianBlur(workingBitmap, BackgroundBlurAmount / BlurWorkingScale);
+
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                graphics.DrawImage(workingBitmap, 0, 0, blurredBitmap.Width, blurredBitmap.Height);
+                blurredBitmap.Save(outputPath, ImageFormat.Png);
             }
+        }
+
+        private static Bitmap CreateBlurWorkingBitmap(Bitmap sourceBitmap)
+        {
+            int width = Math.Max(1, sourceBitmap.Width / BlurWorkingScale);
+            int height = Math.Max(1, sourceBitmap.Height / BlurWorkingScale);
+            var reducedBitmap = new Bitmap(width, height);
+
+            using (Graphics graphics = Graphics.FromImage(reducedBitmap))
+            {
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                graphics.DrawImage(sourceBitmap, 0, 0, width, height);
+            }
+
+            return reducedBitmap;
         }
 
         private static void ApplyGaussianBlur(Bitmap bitmap, float blurAmount)
