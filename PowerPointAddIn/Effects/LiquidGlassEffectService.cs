@@ -8,7 +8,6 @@ namespace PowerPointAddIn.Effects
 {
     internal sealed class LiquidGlassEffectService
     {
-        private const string BorderTagName = "PPTAssistantBorder";
         private static readonly Color ShadowColor = Color.FromArgb(90, 90, 90);
         private readonly PowerPoint.Application application;
 
@@ -150,10 +149,7 @@ namespace PowerPointAddIn.Effects
             overlay.Height = shape.Height;
             ApplyShadow(overlay);
 
-            PowerPoint.Shape border = CreateGradientBorder(slide, overlay, groupKey);
-            border.ZOrder(MsoZOrderCmd.msoBringToFront);
-
-            PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name, border.Name }).Group();
+            PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
         }
 
@@ -184,95 +180,6 @@ namespace PowerPointAddIn.Effects
             shape.Shadow.ForeColor.RGB = ColorTranslator.ToOle(ShadowColor);
             shape.Shadow.Size = 1.01f;
             shape.Shadow.Blur = 0f;
-        }
-
-        private static PowerPoint.Shape CreateGradientBorder(PowerPoint.Slide slide, PowerPoint.Shape referenceShape, string groupKey)
-        {
-            const float lineWeight = 0.5f;
-            float halfWeight = lineWeight / 2f;
-
-            PowerPoint.Shape outer = referenceShape.Duplicate()[1];
-            PowerPoint.Shape inner = referenceShape.Duplicate()[1];
-            string borderKey = $"PPTAssistant Border {groupKey}";
-
-            outer.Name = $"{borderKey} Outer";
-            outer.Tags.Add(BorderTagName, borderKey);
-            outer.Left -= halfWeight;
-            outer.Top -= halfWeight;
-            outer.Width += lineWeight;
-            outer.Height += lineWeight;
-            outer.Line.Visible = MsoTriState.msoFalse;
-            outer.Shadow.Visible = MsoTriState.msoFalse;
-            outer.ThreeD.Visible = MsoTriState.msoFalse;
-            outer.Glow.Radius = 0f;
-            outer.SoftEdge.Radius = 0f;
-
-            inner.Name = $"{borderKey} Inner";
-            inner.Left += halfWeight;
-            inner.Top += halfWeight;
-            inner.Width = Math.Max(1f, inner.Width - lineWeight);
-            inner.Height = Math.Max(1f, inner.Height - lineWeight);
-            inner.Line.Visible = MsoTriState.msoFalse;
-            inner.Fill.Visible = MsoTriState.msoTrue;
-            inner.Fill.Solid();
-            inner.Fill.ForeColor.RGB = ColorTranslator.ToOle(Color.White);
-            inner.Fill.Transparency = 0f;
-            inner.Shadow.Visible = MsoTriState.msoFalse;
-            inner.ThreeD.Visible = MsoTriState.msoFalse;
-            inner.Glow.Radius = 0f;
-            inner.SoftEdge.Radius = 0f;
-
-            outer.Fill.Visible = MsoTriState.msoTrue;
-            outer.Fill.OneColorGradient(MsoGradientStyle.msoGradientDiagonalDown, 1, 1f);
-            outer.Fill.GradientAngle = 45f;
-            ResetGradientStops(outer.Fill);
-            AddGradientStop(outer.Fill, 0.00f, 0.10f);
-            AddGradientStop(outer.Fill, 0.40f, 0.40f);
-            AddGradientStop(outer.Fill, 0.70f, 0.10f);
-            AddGradientStop(outer.Fill, 1.00f, 0.90f);
-
-            slide.Shapes.Range(new object[] { outer.Name, inner.Name }).MergeShapes(MsoMergeCmd.msoMergeSubtract, outer);
-
-            PowerPoint.Shape border = FindTaggedShape(slide, borderKey)
-                ?? throw new InvalidOperationException("Failed to create the gradient border.");
-            border.Name = $"{borderKey} Ring";
-            border.Line.Visible = MsoTriState.msoFalse;
-            border.Shadow.Visible = MsoTriState.msoFalse;
-            border.ThreeD.Visible = MsoTriState.msoFalse;
-            border.Glow.Radius = 0f;
-            border.SoftEdge.Radius = 0f;
-            return border;
-        }
-
-        private static void ResetGradientStops(PowerPoint.FillFormat fill)
-        {
-            for (int index = fill.GradientStops.Count; index >= 1; index--)
-            {
-                fill.GradientStops.Delete(index);
-            }
-        }
-
-        private static void AddGradientStop(PowerPoint.FillFormat fill, float position, float transparency)
-        {
-            fill.GradientStops.Insert(
-                ColorTranslator.ToOle(Color.White),
-                position,
-                transparency,
-                0);
-        }
-
-        private static PowerPoint.Shape FindTaggedShape(PowerPoint.Slide slide, string borderKey)
-        {
-            for (int index = 1; index <= slide.Shapes.Count; index++)
-            {
-                PowerPoint.Shape candidate = slide.Shapes[index];
-                if (candidate.Tags[BorderTagName] == borderKey)
-                {
-                    return candidate;
-                }
-            }
-
-            return null;
         }
 
         private static void ApplyBevel(PowerPoint.Shape shape)
