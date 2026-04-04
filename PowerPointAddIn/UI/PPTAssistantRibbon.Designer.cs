@@ -54,18 +54,18 @@ namespace PowerPointAddIn.UI
             // 
             this.buttonApplyLiquidGlass.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.buttonApplyLiquidGlass.OfficeImageId = "ShapeQuickStylesGallery";
-            this.buttonApplyLiquidGlass.Label = "Apply Glass";
+            this.buttonApplyLiquidGlass.Label = "Transparent Glass";
             this.buttonApplyLiquidGlass.Name = "buttonApplyLiquidGlass";
             this.buttonApplyLiquidGlass.ScreenTip = "Apply a glass look";
             this.buttonApplyLiquidGlass.ShowImage = true;
-            this.buttonApplyLiquidGlass.SuperTip = "Applies background fill, bevel, and shadow to the selected shape.";
+            this.buttonApplyLiquidGlass.SuperTip = "Applies a transparent glass look with background fill, bevel, and shadow to the selected shape.";
             this.buttonApplyLiquidGlass.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonApplyLiquidGlass_Click);
             // 
             // buttonGlassWhite
             // 
             this.buttonGlassWhite.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.buttonGlassWhite.OfficeImageId = "ColorWhite";
-            this.buttonGlassWhite.Label = "Glass White";
+            this.buttonGlassWhite.Label = "White Glass";
             this.buttonGlassWhite.Name = "buttonGlassWhite";
             this.buttonGlassWhite.ScreenTip = "Create a white glass overlay";
             this.buttonGlassWhite.ShowImage = true;
@@ -76,7 +76,7 @@ namespace PowerPointAddIn.UI
             // 
             this.buttonGlassBlack.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.buttonGlassBlack.OfficeImageId = "ColorBlack";
-            this.buttonGlassBlack.Label = "Glass Black";
+            this.buttonGlassBlack.Label = "Black Glass";
             this.buttonGlassBlack.Name = "buttonGlassBlack";
             this.buttonGlassBlack.ScreenTip = "Create a black glass overlay";
             this.buttonGlassBlack.ShowImage = true;
