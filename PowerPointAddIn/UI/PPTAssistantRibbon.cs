@@ -86,6 +86,33 @@ namespace PowerPointAddIn.UI
             }
         }
 
+        private void buttonNavbarAnimation_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (ThisAddIn.Instance == null)
+            {
+                MessageBox.Show(
+                    "The add-in is not initialized yet.",
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                var service = new NavbarAnimationService(ThisAddIn.Instance.Application);
+                service.ApplyToSelection();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         private static void Execute(bool debugMode)
         {
             if (ThisAddIn.Instance == null)

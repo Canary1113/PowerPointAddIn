@@ -184,6 +184,7 @@
   <ItemGroup>
     <Compile Include="Effects\BackgroundImageService.cs" />
     <Compile Include="Effects\LiquidGlassEffectService.cs" />
+    <Compile Include="Effects\NavbarAnimationService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
