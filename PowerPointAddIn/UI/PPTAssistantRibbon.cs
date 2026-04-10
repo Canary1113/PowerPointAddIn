@@ -59,6 +59,33 @@ namespace PowerPointAddIn.UI
             ExecuteLayeredGlass(Color.Black);
         }
 
+        private void buttonRecover_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (ThisAddIn.Instance == null)
+            {
+                MessageBox.Show(
+                    "The add-in is not initialized yet.",
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                var service = new LiquidGlassEffectService(ThisAddIn.Instance.Application);
+                service.RecoverSelection(debugMode: false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         private static void Execute(bool debugMode)
         {
             if (ThisAddIn.Instance == null)
