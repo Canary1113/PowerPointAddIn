@@ -28,7 +28,6 @@ namespace PowerPointAddIn.Effects
         {
             PowerPoint.ShapeRange shapeRange = GetSelectedShapeRange();
             PowerPoint.Presentation presentation = application.ActivePresentation;
-            EnsurePresentationSupportsAbsoluteScalePatch(presentation);
             int changedCount = 0;
             var targetShapeIds = new List<int>();
             PowerPoint.Slide targetSlide = null;
@@ -152,33 +151,40 @@ namespace PowerPointAddIn.Effects
             }
         }
 
-        private static void EnsurePresentationSupportsAbsoluteScalePatch(PowerPoint.Presentation presentation)
-        {
-            if (presentation == null || string.IsNullOrEmpty(presentation.FullName))
-            {
-                throw new InvalidOperationException("Save the presentation as .pptx or .pptm before applying the navbar animation.");
-            }
-
-            string extension = Path.GetExtension(presentation.FullName);
-            if (!string.Equals(extension, ".pptx", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(extension, ".pptm", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException("Navbar animation currently supports only .pptx or .pptm presentations.");
-            }
-        }
-
         private void ApplyAbsoluteScalePatch(PowerPoint.Presentation presentation, int slideIndex, IList<int> targetShapeIds)
         {
-            presentation.Save();
+            if (presentation == null)
+            {
+                throw new InvalidOperationException("No active presentation was found.");
+            }
 
-            string presentationPath = presentation.FullName;
+            bool reopenToTemporaryCopy = string.IsNullOrEmpty(presentation.FullName) ||
+                                         !IsPatchableOpenXmlPresentation(presentation.FullName);
+
+            string reopenPresentationPath = reopenToTemporaryCopy
+                ? CreateTemporaryPresentationPath(presentation)
+                : presentation.FullName;
+
             string tempRoot = Path.Combine(Path.GetTempPath(), "PPTAssistant", "NavbarAnimationPatch", Guid.NewGuid().ToString("N"));
             string extractedPath = Path.Combine(tempRoot, "extracted");
-            string sourceCopyPath = Path.Combine(tempRoot, "source" + Path.GetExtension(presentationPath));
+            string sourceCopyPath = Path.Combine(tempRoot, "source" + Path.GetExtension(reopenPresentationPath));
             string patchedArchivePath = Path.Combine(tempRoot, "patched.zip");
 
             Directory.CreateDirectory(tempRoot);
-            File.Copy(presentationPath, sourceCopyPath, true);
+
+            if (reopenToTemporaryCopy)
+            {
+                presentation.SaveCopyAs(
+                    sourceCopyPath,
+                    GetTemporarySaveFormat(presentation),
+                    MsoTriState.msoFalse);
+            }
+            else
+            {
+                presentation.Save();
+                File.Copy(reopenPresentationPath, sourceCopyPath, true);
+            }
+
             ZipFile.ExtractToDirectory(sourceCopyPath, extractedPath);
 
             string slideXmlPath = Path.Combine(extractedPath, "ppt", "slides", $"slide{slideIndex}.xml");
@@ -186,16 +192,41 @@ namespace PowerPointAddIn.Effects
 
             ZipFile.CreateFromDirectory(extractedPath, patchedArchivePath);
 
+            presentation.Saved = MsoTriState.msoTrue;
             presentation.Close();
-            File.Copy(patchedArchivePath, presentationPath, true);
+            File.Copy(patchedArchivePath, reopenPresentationPath, true);
 
             PowerPoint.Presentation reopenedPresentation = application.Presentations.Open(
-                presentationPath,
+                reopenPresentationPath,
                 MsoTriState.msoFalse,
                 MsoTriState.msoFalse,
                 MsoTriState.msoTrue);
 
             ReSelectPatchedShapes(reopenedPresentation, slideIndex, targetShapeIds);
+        }
+
+        private static bool IsPatchableOpenXmlPresentation(string presentationPath)
+        {
+            string extension = Path.GetExtension(presentationPath);
+            return string.Equals(extension, ".pptx", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(extension, ".pptm", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string CreateTemporaryPresentationPath(PowerPoint.Presentation presentation)
+        {
+            string tempFolder = Path.Combine(Path.GetTempPath(), "PPTAssistant", "UnsavedPresentations");
+            Directory.CreateDirectory(tempFolder);
+
+            bool useMacroEnabled = presentation.HasVBProject;
+            string extension = useMacroEnabled ? ".pptm" : ".pptx";
+            return Path.Combine(tempFolder, "NavbarAnimation-" + Guid.NewGuid().ToString("N") + extension);
+        }
+
+        private static PowerPoint.PpSaveAsFileType GetTemporarySaveFormat(PowerPoint.Presentation presentation)
+        {
+            return presentation.HasVBProject
+                ? PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentationMacroEnabled
+                : PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentation;
         }
 
         private static void PatchScaleAnimationsInSlideXml(string slideXmlPath, IList<int> targetShapeIds)
