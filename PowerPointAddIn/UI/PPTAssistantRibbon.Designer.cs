@@ -113,7 +113,7 @@ namespace PowerPointAddIn.UI
             this.buttonNavbarAnimation.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.buttonNavbarAnimation.Label = "Nav Bar Animation";
             this.buttonNavbarAnimation.Name = "buttonNavbarAnimation";
-            this.buttonNavbarAnimation.OfficeImageId = "AnimationCustomAnimation";
+            this.buttonNavbarAnimation.OfficeImageId = "AnimationPreview";
             this.buttonNavbarAnimation.ScreenTip = "Apply the navbar move-and-scale animation";
             this.buttonNavbarAnimation.ShowImage = true;
             this.buttonNavbarAnimation.SuperTip = "Adds a 1-second straight move, a simultaneous 0.5-second grow to 125%, and a delayed 0.5-second shrink to 80%.";

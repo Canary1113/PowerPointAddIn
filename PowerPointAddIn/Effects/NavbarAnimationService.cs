@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 
 namespace PowerPointAddIn.Effects
@@ -11,6 +12,7 @@ namespace PowerPointAddIn.Effects
         private const float ShrinkDelaySeconds = 0.5f;
         private const float GrowScalePercent = 125f;
         private const float ShrinkScalePercent = 80f;
+        private const float BaseScalePercent = 100f;
         private readonly PowerPoint.Application application;
 
         public NavbarAnimationService(PowerPoint.Application application)
@@ -58,52 +60,66 @@ namespace PowerPointAddIn.Effects
             }
 
             PowerPoint.Sequence sequence = slide.TimeLine.MainSequence;
+            RemoveExistingEffects(shape, sequence);
+
             float slideWidth = application.ActivePresentation.PageSetup.SlideWidth;
-            float moveDistancePercent = shape.Width / slideWidth * 100f;
+            if (slideWidth <= 0f)
+            {
+                throw new InvalidOperationException("The active presentation has an invalid slide width.");
+            }
+
+            float moveDistanceRatio = shape.Width / slideWidth;
 
             PowerPoint.Effect moveEffect = sequence.AddEffect(
                 shape,
-                PowerPoint.MsoAnimEffect.msoAnimEffectCustom,
-                PowerPoint.MsoAnimateByLevel.msoAnimateLevelNone,
-                PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious,
-                -1);
+                PowerPoint.MsoAnimEffect.msoAnimEffectPathRight);
             moveEffect.Timing.Duration = MoveDurationSeconds;
-            PowerPoint.AnimationBehavior motionBehavior = moveEffect.Behaviors.Add(
-                PowerPoint.MsoAnimType.msoAnimTypeMotion,
-                1);
-            motionBehavior.MotionEffect.ByX = moveDistancePercent;
-            motionBehavior.MotionEffect.ByY = 0f;
+            moveEffect.Timing.TriggerType = PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious;
+            moveEffect.Timing.Accelerate = 0f;
+            moveEffect.Timing.Decelerate = 0f;
+            moveEffect.Behaviors[1].MotionEffect.Path = CreateHorizontalLinePath(moveDistanceRatio);
 
             PowerPoint.Effect growEffect = sequence.AddEffect(
                 shape,
-                PowerPoint.MsoAnimEffect.msoAnimEffectCustom,
-                PowerPoint.MsoAnimateByLevel.msoAnimateLevelNone,
-                PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious,
-                -1);
+                PowerPoint.MsoAnimEffect.msoAnimEffectGrowShrink);
             growEffect.Timing.Duration = GrowDurationSeconds;
-            PowerPoint.AnimationBehavior growBehavior = growEffect.Behaviors.Add(
-                PowerPoint.MsoAnimType.msoAnimTypeScale,
-                1);
-            growBehavior.ScaleEffect.FromX = 100f;
-            growBehavior.ScaleEffect.FromY = 100f;
-            growBehavior.ScaleEffect.ToX = GrowScalePercent;
-            growBehavior.ScaleEffect.ToY = GrowScalePercent;
+            growEffect.Timing.TriggerType = PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious;
+            growEffect.Timing.Accelerate = 0f;
+            growEffect.Timing.Decelerate = 0f;
+            growEffect.Behaviors[1].ScaleEffect.ByX = GrowScalePercent - BaseScalePercent;
+            growEffect.Behaviors[1].ScaleEffect.ByY = GrowScalePercent - BaseScalePercent;
 
             PowerPoint.Effect shrinkEffect = sequence.AddEffect(
                 shape,
-                PowerPoint.MsoAnimEffect.msoAnimEffectCustom,
-                PowerPoint.MsoAnimateByLevel.msoAnimateLevelNone,
-                PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious,
-                -1);
+                PowerPoint.MsoAnimEffect.msoAnimEffectGrowShrink);
             shrinkEffect.Timing.Duration = ShrinkDurationSeconds;
+            shrinkEffect.Timing.TriggerType = PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious;
             shrinkEffect.Timing.TriggerDelayTime = ShrinkDelaySeconds;
-            PowerPoint.AnimationBehavior shrinkBehavior = shrinkEffect.Behaviors.Add(
-                PowerPoint.MsoAnimType.msoAnimTypeScale,
-                1);
-            shrinkBehavior.ScaleEffect.FromX = GrowScalePercent;
-            shrinkBehavior.ScaleEffect.FromY = GrowScalePercent;
-            shrinkBehavior.ScaleEffect.ToX = ShrinkScalePercent;
-            shrinkBehavior.ScaleEffect.ToY = ShrinkScalePercent;
+            shrinkEffect.Timing.Accelerate = 0f;
+            shrinkEffect.Timing.Decelerate = 0f;
+            shrinkEffect.Behaviors[1].ScaleEffect.ByX = ShrinkScalePercent - BaseScalePercent;
+            shrinkEffect.Behaviors[1].ScaleEffect.ByY = ShrinkScalePercent - BaseScalePercent;
+        }
+
+        private static string CreateHorizontalLinePath(float moveDistanceRatio)
+        {
+            float clampedRatio = Math.Max(0.001f, moveDistanceRatio);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "M 0 0 L {0:0.######} 0 E",
+                clampedRatio);
+        }
+
+        private static void RemoveExistingEffects(PowerPoint.Shape shape, PowerPoint.Sequence sequence)
+        {
+            for (int index = sequence.Count; index >= 1; index--)
+            {
+                PowerPoint.Effect effect = sequence[index];
+                if (effect.Shape != null && effect.Shape.Id == shape.Id)
+                {
+                    effect.Delete();
+                }
+            }
         }
     }
 }
