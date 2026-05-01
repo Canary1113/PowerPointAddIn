@@ -113,6 +113,43 @@ namespace PowerPointAddIn.UI
             }
         }
 
+        private void buttonThemeStyle1_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteTheme(service => service.ApplyStyle1());
+        }
+
+        private void buttonThemeStyle2_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteTheme(service => service.ApplyStyle2());
+        }
+
+        private static void ExecuteTheme(Action<ThemeService> applyTheme)
+        {
+            if (ThisAddIn.Instance == null)
+            {
+                MessageBox.Show(
+                    "The add-in is not initialized yet.",
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                var service = new ThemeService(ThisAddIn.Instance.Application);
+                applyTheme(service);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "PPT Assistant",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         private static void Execute(bool debugMode)
         {
             if (ThisAddIn.Instance == null)

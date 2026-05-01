@@ -104,8 +104,6 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
@@ -187,6 +185,8 @@
     <Compile Include="Effects\BackgroundImageService.cs" />
     <Compile Include="Effects\LiquidGlassEffectService.cs" />
     <Compile Include="Effects\NavbarAnimationService.cs" />
+    <Compile Include="Effects\PowerPointShapeContext.cs" />
+    <Compile Include="Effects\ThemeService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

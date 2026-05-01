@@ -30,6 +30,9 @@ namespace PowerPointAddIn.UI
             this.buttonGlassBlack = this.Factory.CreateRibbonButton();
             this.buttonRecover = this.Factory.CreateRibbonButton();
             this.buttonNavbarAnimation = this.Factory.CreateRibbonButton();
+            this.menuTheme = this.Factory.CreateRibbonMenu();
+            this.buttonThemeStyle1 = this.Factory.CreateRibbonButton();
+            this.buttonThemeStyle2 = this.Factory.CreateRibbonButton();
             this.buttonApplyLiquidGlassDebug = this.Factory.CreateRibbonButton();
             this.tabAddIns.SuspendLayout();
             this.groupLiquidGlass.SuspendLayout();
@@ -50,6 +53,7 @@ namespace PowerPointAddIn.UI
             this.groupLiquidGlass.Items.Add(this.buttonGlassBlack);
             this.groupLiquidGlass.Items.Add(this.buttonRecover);
             this.groupLiquidGlass.Items.Add(this.buttonNavbarAnimation);
+            this.groupLiquidGlass.Items.Add(this.menuTheme);
             this.groupLiquidGlass.Items.Add(this.buttonApplyLiquidGlassDebug);
             this.groupLiquidGlass.Label = "Add-In";
             this.groupLiquidGlass.Name = "groupLiquidGlass";
@@ -119,6 +123,38 @@ namespace PowerPointAddIn.UI
             this.buttonNavbarAnimation.SuperTip = "Adds a 1-second straight move, a simultaneous 0.5-second grow to 125%, and a delayed 0.5-second shrink to 80%.";
             this.buttonNavbarAnimation.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonNavbarAnimation_Click);
             // 
+            // menuTheme
+            // 
+            this.menuTheme.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.menuTheme.Items.Add(this.buttonThemeStyle1);
+            this.menuTheme.Items.Add(this.buttonThemeStyle2);
+            this.menuTheme.Label = "\u4e3b\u9898";
+            this.menuTheme.Name = "menuTheme";
+            this.menuTheme.OfficeImageId = "DesignThemesGallery";
+            this.menuTheme.ScreenTip = "Apply a slide theme";
+            this.menuTheme.ShowImage = true;
+            this.menuTheme.SuperTip = "Creates locked full-slide theme background shapes.";
+            // 
+            // buttonThemeStyle1
+            // 
+            this.buttonThemeStyle1.Label = "\u5f0f\u68371";
+            this.buttonThemeStyle1.Name = "buttonThemeStyle1";
+            this.buttonThemeStyle1.OfficeImageId = "ShapeRectangle";
+            this.buttonThemeStyle1.ScreenTip = "Create Style 1 background";
+            this.buttonThemeStyle1.ShowImage = true;
+            this.buttonThemeStyle1.SuperTip = "Creates a locked full-slide rectangle with no line and RGB 247, 247, 247 fill.";
+            this.buttonThemeStyle1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonThemeStyle1_Click);
+            // 
+            // buttonThemeStyle2
+            // 
+            this.buttonThemeStyle2.Label = "\u5f0f\u68372";
+            this.buttonThemeStyle2.Name = "buttonThemeStyle2";
+            this.buttonThemeStyle2.OfficeImageId = "ShapeRectangle";
+            this.buttonThemeStyle2.ScreenTip = "Create Style 2 background";
+            this.buttonThemeStyle2.ShowImage = true;
+            this.buttonThemeStyle2.SuperTip = "Creates a locked gray full-slide background and a white 33.93 cm by 2.33 cm header with a light solid line and shadow.";
+            this.buttonThemeStyle2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonThemeStyle2_Click);
+            // 
             // buttonApplyLiquidGlassDebug
             // 
             this.buttonApplyLiquidGlassDebug.OfficeImageId = "ReviewNewComment";
@@ -151,6 +187,9 @@ namespace PowerPointAddIn.UI
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonBackground;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonRecover;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonNavbarAnimation;
+        internal Microsoft.Office.Tools.Ribbon.RibbonMenu menuTheme;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonThemeStyle1;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonThemeStyle2;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonApplyLiquidGlassDebug;
     }
 }

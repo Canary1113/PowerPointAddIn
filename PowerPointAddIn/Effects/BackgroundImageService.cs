@@ -23,13 +23,7 @@ namespace PowerPointAddIn.Effects
 
         public void ApplyFromSelectedPicture()
         {
-            PowerPoint.DocumentWindow activeWindow = application.ActiveWindow;
-            if (activeWindow == null)
-            {
-                throw new InvalidOperationException("No active PowerPoint window was found.");
-            }
-
-            PowerPoint.Selection selection = activeWindow.Selection;
+            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
             if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes || selection.ShapeRange.Count != 1)
             {
                 throw new InvalidOperationException("Select exactly one picture first.");
@@ -41,11 +35,7 @@ namespace PowerPointAddIn.Effects
                 throw new InvalidOperationException("Background works only with one selected picture.");
             }
 
-            PowerPoint.Slide slide = selectedShape.Parent as PowerPoint.Slide;
-            if (slide == null)
-            {
-                throw new InvalidOperationException("The selected picture must be on a slide.");
-            }
+            PowerPointShapeContext context = PowerPointShapeContext.FromShape(selectedShape);
 
             string tempFolder = GetWorkingFolder();
             Directory.CreateDirectory(tempFolder);
@@ -59,10 +49,10 @@ namespace PowerPointAddIn.Effects
             ExportSlideSizedImage(selectedShape, clearFullPath, slideWidth, slideHeight, ForegroundRenderScale);
             CreateBlurredCopy(clearFullPath, blurredPath);
 
-            RemoveGeneratedForegrounds(slide);
+            RemoveGeneratedForegrounds(context.Shapes);
             selectedShape.Delete();
 
-            PowerPoint.Shape foreground = slide.Shapes.AddPicture(
+            PowerPoint.Shape foreground = context.Shapes.AddPicture(
                 clearFullPath,
                 MsoTriState.msoFalse,
                 MsoTriState.msoTrue,
@@ -76,8 +66,7 @@ namespace PowerPointAddIn.Effects
             foreground.Locked = MsoTriState.msoTrue;
             foreground.ZOrder(MsoZOrderCmd.msoSendToBack);
 
-            slide.FollowMasterBackground = MsoTriState.msoFalse;
-            slide.Background.Fill.UserPicture(blurredPath);
+            context.SetBackgroundPicture(blurredPath);
         }
 
         private static string GetWorkingFolder()
@@ -107,11 +96,11 @@ namespace PowerPointAddIn.Effects
             }
         }
 
-        private static void RemoveGeneratedForegrounds(PowerPoint.Slide slide)
+        private static void RemoveGeneratedForegrounds(PowerPoint.Shapes shapes)
         {
-            for (int index = slide.Shapes.Count; index >= 1; index--)
+            for (int index = shapes.Count; index >= 1; index--)
             {
-                PowerPoint.Shape shape = slide.Shapes[index];
+                PowerPoint.Shape shape = shapes[index];
                 if (shape.Tags[GeneratedForegroundTag] == "1")
                 {
                     shape.Delete();

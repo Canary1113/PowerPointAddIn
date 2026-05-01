@@ -84,13 +84,7 @@ namespace PowerPointAddIn.Effects
 
         private PowerPoint.ShapeRange GetSelectedShapeRange()
         {
-            PowerPoint.DocumentWindow activeWindow = application.ActiveWindow;
-            if (activeWindow == null)
-            {
-                throw new InvalidOperationException("No active PowerPoint window was found.");
-            }
-
-            PowerPoint.Selection selection = activeWindow.Selection;
+            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
             if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes)
             {
                 throw new InvalidOperationException("Select one or more shapes first.");
@@ -193,11 +187,7 @@ namespace PowerPointAddIn.Effects
             ClearEffects(shape);
             ApplyShadow(shape, UnifiedShadowColor);
 
-            PowerPoint.Slide slide = shape.Parent as PowerPoint.Slide;
-            if (slide == null)
-            {
-                throw new InvalidOperationException("The selected shape must be on a slide.");
-            }
+            PowerPointShapeContext context = PowerPointShapeContext.FromShape(shape);
 
             string groupKey = Guid.NewGuid().ToString("N");
             shape.Name = $"PPTAssistant Base {groupKey}";
@@ -223,7 +213,7 @@ namespace PowerPointAddIn.Effects
             ClearOriginalAppearanceTags(overlay);
             MarkGlass(overlay, LayeredGlassKind, OverlayRole, groupKey);
 
-            PowerPoint.Shape grouped = slide.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
+            PowerPoint.Shape grouped = context.Shapes.Range(new object[] { shape.Name, overlay.Name }).Group();
             grouped.Name = $"PPTAssistant Glass {groupKey}";
             ApplyBevel(grouped);
             grouped.Shadow.Visible = MsoTriState.msoFalse;

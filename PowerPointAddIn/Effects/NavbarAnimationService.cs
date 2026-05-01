@@ -1,20 +1,15 @@
 using System;
 using System.Globalization;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Xml;
-using Microsoft.Office.Core;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 
 namespace PowerPointAddIn.Effects
 {
     internal sealed class NavbarAnimationService
     {
-        private const float MoveDurationSeconds = 1f;
-        private const float GrowDurationSeconds = 0.5f;
-        private const float ShrinkDurationSeconds = 0.5f;
-        private const float ShrinkDelaySeconds = 0.5f;
+        private const float MoveDurationSeconds = 0.5f;
+        private const float GrowDurationSeconds = 0.25f;
+        private const float ShrinkDurationSeconds = 0.25f;
+        private const float ShrinkDelaySeconds = 0.25f;
         private const float GrowScalePercent = 125f;
         private const float ShrinkScalePercent = 80f;
         private readonly PowerPoint.Application application;
@@ -27,37 +22,12 @@ namespace PowerPointAddIn.Effects
         public int ApplyToSelection()
         {
             PowerPoint.ShapeRange shapeRange = GetSelectedShapeRange();
-            PowerPoint.Presentation presentation = application.ActivePresentation;
             int changedCount = 0;
-            var targetShapeIds = new List<int>();
-            PowerPoint.Slide targetSlide = null;
 
             for (int index = 1; index <= shapeRange.Count; index++)
             {
-                PowerPoint.Shape shape = shapeRange[index];
-                PowerPoint.Slide shapeSlide = shape.Parent as PowerPoint.Slide;
-                if (shapeSlide == null)
-                {
-                    throw new InvalidOperationException("The selected shape must be on a slide.");
-                }
-
-                if (targetSlide == null)
-                {
-                    targetSlide = shapeSlide;
-                }
-                else if (shapeSlide.SlideIndex != targetSlide.SlideIndex)
-                {
-                    throw new InvalidOperationException("Select shapes from only one slide at a time.");
-                }
-
-                ApplyToShape(shape);
-                targetShapeIds.Add(shape.Id);
+                ApplyToShape(shapeRange[index]);
                 changedCount++;
-            }
-
-            if (targetSlide != null)
-            {
-                ApplyAbsoluteScalePatch(presentation, targetSlide.SlideIndex, targetShapeIds);
             }
 
             return changedCount;
@@ -65,13 +35,7 @@ namespace PowerPointAddIn.Effects
 
         private PowerPoint.ShapeRange GetSelectedShapeRange()
         {
-            PowerPoint.DocumentWindow activeWindow = application.ActiveWindow;
-            if (activeWindow == null)
-            {
-                throw new InvalidOperationException("No active PowerPoint window was found.");
-            }
-
-            PowerPoint.Selection selection = activeWindow.Selection;
+            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
             if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes)
             {
                 throw new InvalidOperationException("Select one or more navigation shapes first.");
@@ -82,13 +46,7 @@ namespace PowerPointAddIn.Effects
 
         private void ApplyToShape(PowerPoint.Shape shape)
         {
-            PowerPoint.Slide slide = shape.Parent as PowerPoint.Slide;
-            if (slide == null)
-            {
-                throw new InvalidOperationException("The selected shape must be on a slide.");
-            }
-
-            PowerPoint.Sequence sequence = slide.TimeLine.MainSequence;
+            PowerPoint.Sequence sequence = PowerPointShapeContext.FromShape(shape).GetTimeLine().MainSequence;
             RemoveExistingEffects(shape, sequence);
 
             float slideWidth = application.ActivePresentation.PageSetup.SlideWidth;
@@ -115,8 +73,8 @@ namespace PowerPointAddIn.Effects
             growEffect.Timing.TriggerType = PowerPoint.MsoAnimTriggerType.msoAnimTriggerWithPrevious;
             growEffect.Timing.Accelerate = 0f;
             growEffect.Timing.Decelerate = 0f;
-            growEffect.Behaviors[1].ScaleEffect.ToX = GrowScalePercent;
-            growEffect.Behaviors[1].ScaleEffect.ToY = GrowScalePercent;
+            growEffect.Behaviors[1].ScaleEffect.ByX = GrowScalePercent;
+            growEffect.Behaviors[1].ScaleEffect.ByY = GrowScalePercent;
 
             PowerPoint.Effect shrinkEffect = sequence.AddEffect(
                 shape,
@@ -126,8 +84,8 @@ namespace PowerPointAddIn.Effects
             shrinkEffect.Timing.TriggerDelayTime = ShrinkDelaySeconds;
             shrinkEffect.Timing.Accelerate = 0f;
             shrinkEffect.Timing.Decelerate = 0f;
-            shrinkEffect.Behaviors[1].ScaleEffect.ToX = ShrinkScalePercent;
-            shrinkEffect.Behaviors[1].ScaleEffect.ToY = ShrinkScalePercent;
+            shrinkEffect.Behaviors[1].ScaleEffect.ByX = ShrinkScalePercent;
+            shrinkEffect.Behaviors[1].ScaleEffect.ByY = ShrinkScalePercent;
         }
 
         private static string CreateHorizontalLinePath(float moveDistanceRatio)
@@ -149,171 +107,6 @@ namespace PowerPointAddIn.Effects
                     effect.Delete();
                 }
             }
-        }
-
-        private void ApplyAbsoluteScalePatch(PowerPoint.Presentation presentation, int slideIndex, IList<int> targetShapeIds)
-        {
-            if (presentation == null)
-            {
-                throw new InvalidOperationException("No active presentation was found.");
-            }
-
-            bool reopenToTemporaryCopy = string.IsNullOrEmpty(presentation.FullName) ||
-                                         !IsPatchableOpenXmlPresentation(presentation.FullName);
-
-            string reopenPresentationPath = reopenToTemporaryCopy
-                ? CreateTemporaryPresentationPath(presentation)
-                : presentation.FullName;
-
-            string tempRoot = Path.Combine(Path.GetTempPath(), "PPTAssistant", "NavbarAnimationPatch", Guid.NewGuid().ToString("N"));
-            string extractedPath = Path.Combine(tempRoot, "extracted");
-            string sourceCopyPath = Path.Combine(tempRoot, "source" + Path.GetExtension(reopenPresentationPath));
-            string patchedArchivePath = Path.Combine(tempRoot, "patched.zip");
-
-            Directory.CreateDirectory(tempRoot);
-
-            if (reopenToTemporaryCopy)
-            {
-                presentation.SaveCopyAs(
-                    sourceCopyPath,
-                    GetTemporarySaveFormat(presentation),
-                    MsoTriState.msoFalse);
-            }
-            else
-            {
-                presentation.Save();
-                File.Copy(reopenPresentationPath, sourceCopyPath, true);
-            }
-
-            ZipFile.ExtractToDirectory(sourceCopyPath, extractedPath);
-
-            string slideXmlPath = Path.Combine(extractedPath, "ppt", "slides", $"slide{slideIndex}.xml");
-            PatchScaleAnimationsInSlideXml(slideXmlPath, targetShapeIds);
-
-            ZipFile.CreateFromDirectory(extractedPath, patchedArchivePath);
-
-            presentation.Saved = MsoTriState.msoTrue;
-            presentation.Close();
-            File.Copy(patchedArchivePath, reopenPresentationPath, true);
-
-            PowerPoint.Presentation reopenedPresentation = application.Presentations.Open(
-                reopenPresentationPath,
-                MsoTriState.msoFalse,
-                MsoTriState.msoFalse,
-                MsoTriState.msoTrue);
-
-            ReSelectPatchedShapes(reopenedPresentation, slideIndex, targetShapeIds);
-        }
-
-        private static bool IsPatchableOpenXmlPresentation(string presentationPath)
-        {
-            string extension = Path.GetExtension(presentationPath);
-            return string.Equals(extension, ".pptx", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(extension, ".pptm", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string CreateTemporaryPresentationPath(PowerPoint.Presentation presentation)
-        {
-            string tempFolder = Path.Combine(Path.GetTempPath(), "PPTAssistant", "UnsavedPresentations");
-            Directory.CreateDirectory(tempFolder);
-
-            bool useMacroEnabled = presentation.HasVBProject;
-            string extension = useMacroEnabled ? ".pptm" : ".pptx";
-            return Path.Combine(tempFolder, "NavbarAnimation-" + Guid.NewGuid().ToString("N") + extension);
-        }
-
-        private static PowerPoint.PpSaveAsFileType GetTemporarySaveFormat(PowerPoint.Presentation presentation)
-        {
-            return presentation.HasVBProject
-                ? PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentationMacroEnabled
-                : PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentation;
-        }
-
-        private static void PatchScaleAnimationsInSlideXml(string slideXmlPath, IList<int> targetShapeIds)
-        {
-            var document = new XmlDocument();
-            document.PreserveWhitespace = true;
-            document.Load(slideXmlPath);
-
-            var namespaceManager = new XmlNamespaceManager(document.NameTable);
-            namespaceManager.AddNamespace("p", "http://schemas.openxmlformats.org/presentationml/2006/main");
-
-            for (int index = 0; index < targetShapeIds.Count; index++)
-            {
-                string shapeId = targetShapeIds[index].ToString(CultureInfo.InvariantCulture);
-                XmlNodeList scaleNodes = document.SelectNodes(
-                    $"//p:par[p:cTn/p:childTnLst/p:animScale/p:cBhvr/p:tgtEl/p:spTgt[@spid='{shapeId}']]/p:cTn/p:childTnLst/p:animScale",
-                    namespaceManager);
-
-                if (scaleNodes == null || scaleNodes.Count < 2)
-                {
-                    continue;
-                }
-
-                SetAbsoluteScaleValue(document, scaleNodes[0], GrowScalePercent, namespaceManager);
-                SetAbsoluteScaleValue(document, scaleNodes[1], ShrinkScalePercent, namespaceManager);
-            }
-
-            document.Save(slideXmlPath);
-        }
-
-        private static void SetAbsoluteScaleValue(XmlDocument document, XmlNode animScaleNode, float targetPercent, XmlNamespaceManager namespaceManager)
-        {
-            XmlNode byNode = animScaleNode.SelectSingleNode("p:by", namespaceManager);
-            if (byNode != null)
-            {
-                animScaleNode.RemoveChild(byNode);
-            }
-
-            XmlNode fromNode = animScaleNode.SelectSingleNode("p:from", namespaceManager);
-            if (fromNode != null)
-            {
-                animScaleNode.RemoveChild(fromNode);
-            }
-
-            XmlElement toElement = animScaleNode.SelectSingleNode("p:to", namespaceManager) as XmlElement;
-            if (toElement == null)
-            {
-                toElement = document.CreateElement("p", "to", "http://schemas.openxmlformats.org/presentationml/2006/main");
-                animScaleNode.AppendChild(toElement);
-            }
-
-            string value = Math.Round(targetPercent * 1000f).ToString(CultureInfo.InvariantCulture);
-            toElement.SetAttribute("x", value);
-            toElement.SetAttribute("y", value);
-        }
-
-        private static void ReSelectPatchedShapes(PowerPoint.Presentation presentation, int slideIndex, IList<int> targetShapeIds)
-        {
-            PowerPoint.Slide slide = presentation.Slides[slideIndex];
-            slide.Select();
-
-            var matchedShapeNames = new List<string>();
-            for (int index = 1; index <= slide.Shapes.Count; index++)
-            {
-                PowerPoint.Shape shape = slide.Shapes[index];
-                for (int idIndex = 0; idIndex < targetShapeIds.Count; idIndex++)
-                {
-                    if (shape.Id == targetShapeIds[idIndex])
-                    {
-                        matchedShapeNames.Add(shape.Name);
-                        break;
-                    }
-                }
-            }
-
-            if (matchedShapeNames.Count == 0)
-            {
-                return;
-            }
-
-            object[] shapeNames = new object[matchedShapeNames.Count];
-            for (int index = 0; index < matchedShapeNames.Count; index++)
-            {
-                shapeNames[index] = matchedShapeNames[index];
-            }
-
-            slide.Shapes.Range(shapeNames).Select();
         }
     }
 }
