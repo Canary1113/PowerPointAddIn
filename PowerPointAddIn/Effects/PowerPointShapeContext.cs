@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Office.Core;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
@@ -60,6 +61,26 @@ namespace PowerPointAddIn.Effects
             return GetActiveWindow(application).Selection;
         }
 
+        public static void TrySetShapeLocked(PowerPoint.Shape shape, MsoTriState locked)
+        {
+            if (shape == null)
+            {
+                return;
+            }
+
+            try
+            {
+                dynamic dynamicShape = shape;
+                dynamicShape.Locked = locked;
+            }
+            catch (RuntimeBinderException)
+            {
+            }
+            catch (COMException)
+            {
+            }
+        }
+
         public PowerPoint.TimeLine GetTimeLine()
         {
             try
@@ -106,12 +127,17 @@ namespace PowerPointAddIn.Effects
                 return;
             }
 
+            ClearShapes();
+        }
+
+        public void ClearShapes()
+        {
             for (int index = Shapes.Count; index >= 1; index--)
             {
                 PowerPoint.Shape shape = Shapes[index];
                 try
                 {
-                    shape.Locked = MsoTriState.msoFalse;
+                    TrySetShapeLocked(shape, MsoTriState.msoFalse);
                 }
                 catch (RuntimeBinderException)
                 {

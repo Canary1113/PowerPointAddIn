@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using Microsoft.Office.Tools.Ribbon;
@@ -8,18 +9,20 @@ namespace PowerPointAddIn.UI
 {
     public partial class PPTAssistantRibbon
     {
+        private Image themeIcon;
+        private readonly Dictionary<RibbonDropDownItem, ThemeTemplateInfo> themeTemplates =
+            new Dictionary<RibbonDropDownItem, ThemeTemplateInfo>();
+
         private void PPTAssistantRibbon_Load(object sender, RibbonUIEventArgs e)
         {
+            themeIcon = CreateThemeIcon();
+            galleryTheme.OfficeImageId = string.Empty;
+            galleryTheme.Image = themeIcon;
         }
 
         private void buttonApplyLiquidGlass_Click(object sender, RibbonControlEventArgs e)
         {
             Execute(debugMode: false);
-        }
-
-        private void buttonApplyLiquidGlassDebug_Click(object sender, RibbonControlEventArgs e)
-        {
-            Execute(debugMode: true);
         }
 
         private void buttonBackground_Click(object sender, RibbonControlEventArgs e)
@@ -113,14 +116,44 @@ namespace PowerPointAddIn.UI
             }
         }
 
-        private void buttonThemeStyle1_Click(object sender, RibbonControlEventArgs e)
+        private void galleryTheme_Click(object sender, RibbonControlEventArgs e)
         {
-            ExecuteTheme(service => service.ApplyStyle1());
+            var selectedItem = galleryTheme.SelectedItem;
+
+            if (selectedItem != null && themeTemplates.TryGetValue(selectedItem, out ThemeTemplateInfo template))
+            {
+                ExecuteTheme(service => service.ApplyTemplate(template));
+            }
+            galleryTheme.SelectedItemIndex = -1;
         }
 
-        private void buttonThemeStyle2_Click(object sender, RibbonControlEventArgs e)
+        private void galleryTheme_ItemsLoading(object sender, RibbonControlEventArgs e)
         {
-            ExecuteTheme(service => service.ApplyStyle2());
+            RefreshThemeGallery(showErrors: true);
+        }
+
+        private void buttonThemeColor_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteThemePersonalize();
+        }
+
+        private void buttonOpenThemeTemplate_Click(object sender, RibbonControlEventArgs e)
+        {
+            ExecuteTheme(service => service.OpenThemeTemplate());
+        }
+
+        private static void ExecuteThemePersonalize()
+        {
+            using (var colorDialog = new ColorDialog())
+            {
+                colorDialog.Color = Color.FromArgb(0, 112, 192);
+                colorDialog.FullOpen = true;
+
+                if (colorDialog.ShowDialog() == DialogResult.OK)
+                {
+                    ExecuteTheme(service => service.CustomizeAccentColor(colorDialog.Color));
+                }
+            }
         }
 
         private static void ExecuteTheme(Action<ThemeService> applyTheme)
@@ -147,6 +180,40 @@ namespace PowerPointAddIn.UI
                     "PPT Assistant",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+            }
+        }
+
+        private void RefreshThemeGallery(bool showErrors)
+        {
+            themeTemplates.Clear();
+            galleryTheme.Items.Clear();
+
+            if (ThisAddIn.Instance == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var service = new ThemeService(ThisAddIn.Instance.Application);
+                foreach (ThemeTemplateInfo template in service.GetAvailableTemplates())
+                {
+                    RibbonDropDownItem item = Factory.CreateRibbonDropDownItem();
+                    item.Label = template.Label;
+                    galleryTheme.Items.Add(item);
+                    themeTemplates[item] = template;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (showErrors)
+                {
+                    MessageBox.Show(
+                        ex.Message,
+                        "PPT Assistant",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
             }
         }
 
@@ -211,6 +278,35 @@ namespace PowerPointAddIn.UI
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+        }
+
+        private static Image CreateThemeIcon()
+        {
+            var bitmap = new Bitmap(32, 32);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (var outlinePen = new Pen(Color.FromArgb(80, 80, 80), 1.4f))
+            using (var accentPen = new Pen(Color.FromArgb(0, 112, 192), 2f))
+            using (var whiteBrush = new SolidBrush(Color.White))
+            using (var lightBrush = new SolidBrush(Color.FromArgb(247, 247, 247)))
+            using (var darkBrush = new SolidBrush(Color.FromArgb(64, 64, 64)))
+            using (var accentBrush = new SolidBrush(Color.FromArgb(0, 112, 192)))
+            {
+                graphics.Clear(Color.Transparent);
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                graphics.FillRectangle(lightBrush, 5, 6, 21, 17);
+                graphics.DrawRectangle(outlinePen, 5, 6, 21, 17);
+                graphics.FillRectangle(whiteBrush, 8, 9, 15, 3);
+                graphics.FillRectangle(darkBrush, 8, 15, 8, 2);
+                graphics.FillRectangle(darkBrush, 8, 19, 12, 2);
+
+                graphics.FillEllipse(accentBrush, 19, 17, 10, 10);
+                graphics.DrawEllipse(accentPen, 19, 17, 10, 10);
+                graphics.DrawLine(accentPen, 22, 22, 26, 22);
+                graphics.DrawLine(accentPen, 24, 20, 24, 24);
+            }
+
+            return bitmap;
         }
     }
 }

@@ -63,7 +63,7 @@ namespace PowerPointAddIn.Effects
 
             foreground.Name = $"PPTAssistant Foreground {DateTime.Now:HHmmss}";
             foreground.Tags.Add(GeneratedForegroundTag, "1");
-            foreground.Locked = MsoTriState.msoTrue;
+            PowerPointShapeContext.TrySetShapeLocked(foreground, MsoTriState.msoTrue);
             foreground.ZOrder(MsoZOrderCmd.msoSendToBack);
 
             context.SetBackgroundPicture(blurredPath);
