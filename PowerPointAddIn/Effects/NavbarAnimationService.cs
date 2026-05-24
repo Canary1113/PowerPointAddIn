@@ -35,13 +35,10 @@ namespace PowerPointAddIn.Effects
 
         private PowerPoint.ShapeRange GetSelectedShapeRange()
         {
-            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
-            if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes)
-            {
-                throw new InvalidOperationException("Select one or more navigation shapes first.");
-            }
-
-            return selection.ShapeRange;
+            return PowerPointShapeContext.GetSelectedShapeRange(
+                application,
+                "Nav Bar Animation",
+                requireSingleShape: false);
         }
 
         private void ApplyToShape(PowerPoint.Shape shape)

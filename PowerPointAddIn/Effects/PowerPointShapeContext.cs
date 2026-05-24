@@ -61,6 +61,85 @@ namespace PowerPointAddIn.Effects
             return GetActiveWindow(application).Selection;
         }
 
+        public static PowerPoint.ShapeRange GetSelectedShapeRange(
+            PowerPoint.Application application,
+            string commandName,
+            bool requireSingleShape)
+        {
+            PowerPoint.Selection selection = GetActiveSelection(application);
+            if (selection == null)
+            {
+                throw new InvalidOperationException($"Select an object before using {commandName}.");
+            }
+
+            if (selection.Type == PowerPoint.PpSelectionType.ppSelectionText)
+            {
+                throw new InvalidOperationException(
+                    $"You selected text inside a text box. Select the text box border, then click {commandName}.");
+            }
+
+            if (selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes)
+            {
+                throw new InvalidOperationException($"Select one or more objects before using {commandName}.");
+            }
+
+            PowerPoint.ShapeRange shapeRange = selection.ShapeRange;
+            if (shapeRange == null || shapeRange.Count == 0)
+            {
+                throw new InvalidOperationException($"Select one or more objects before using {commandName}.");
+            }
+
+            if (requireSingleShape && shapeRange.Count != 1)
+            {
+                throw new InvalidOperationException($"Select exactly one object before using {commandName}.");
+            }
+
+            return shapeRange;
+        }
+
+        public static string DescribeShape(PowerPoint.Shape shape)
+        {
+            if (shape == null)
+            {
+                return "unknown object";
+            }
+
+            switch (shape.Type)
+            {
+                case MsoShapeType.msoPicture:
+                case MsoShapeType.msoLinkedPicture:
+                    return "picture";
+                case MsoShapeType.msoGroup:
+                    return "group";
+                case MsoShapeType.msoLine:
+                    return "line";
+                case MsoShapeType.msoTable:
+                    return "table";
+                case MsoShapeType.msoChart:
+                    return "chart";
+                case MsoShapeType.msoSmartArt:
+                    return "SmartArt";
+                case MsoShapeType.msoMedia:
+                    return "media object";
+                case MsoShapeType.msoEmbeddedOLEObject:
+                case MsoShapeType.msoLinkedOLEObject:
+                    return "embedded object";
+                default:
+                    try
+                    {
+                        if (shape.HasTextFrame == MsoTriState.msoTrue)
+                        {
+                            return "text box or text shape";
+                        }
+                    }
+                    catch (COMException)
+                    {
+                    }
+
+                    return "shape";
+            }
+        }
+
         public static void TrySetShapeLocked(PowerPoint.Shape shape, MsoTriState locked)
         {
             if (shape == null)

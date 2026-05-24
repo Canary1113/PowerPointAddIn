@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Office.Core;
 using System.Xml.Linq;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
@@ -440,6 +441,10 @@ namespace PowerPointAddIn.Effects
 
                 TagPastedShapes(pastedShapes, tagValue);
                 SendFullSlideBackgroundToBack(pastedShapes, targetSlideWidth, targetSlideHeight);
+                if (context.IsTemplateSurface)
+                {
+                    EnsureSlideNumbersVisible(targetPresentation);
+                }
             }
             catch (COMException ex)
             {
@@ -539,6 +544,49 @@ namespace PowerPointAddIn.Effects
             for (int index = 1; index <= pastedRange.Count; index++)
             {
                 pastedShapes.Add(pastedRange[index]);
+            }
+        }
+
+        private static void EnsureSlideNumbersVisible(PowerPoint.Presentation presentation)
+        {
+            TrySetSlideNumberVisible(presentation);
+            TrySetSlideNumberVisible(presentation.SlideMaster);
+
+            try
+            {
+                foreach (PowerPoint.CustomLayout layout in presentation.SlideMaster.CustomLayouts)
+                {
+                    TrySetSlideNumberVisible(layout);
+                }
+            }
+            catch (COMException)
+            {
+            }
+
+            try
+            {
+                foreach (PowerPoint.Slide slide in presentation.Slides)
+                {
+                    TrySetSlideNumberVisible(slide);
+                }
+            }
+            catch (COMException)
+            {
+            }
+        }
+
+        private static void TrySetSlideNumberVisible(object owner)
+        {
+            try
+            {
+                dynamic dynamicOwner = owner;
+                dynamicOwner.HeadersFooters.SlideNumber.Visible = MsoTriState.msoTrue;
+            }
+            catch (RuntimeBinderException)
+            {
+            }
+            catch (COMException)
+            {
             }
         }
 

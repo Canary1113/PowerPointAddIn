@@ -201,7 +201,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="PowerPointAddIn_TemporaryKey.pfx" />
     <Content Include="Assets\ThemeStyles.pptx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -236,9 +235,10 @@
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests Condition="Exists('PowerPointAddIn_TemporaryKey.pfx')">true</SignManifests>
+    <SignManifests Condition="!Exists('PowerPointAddIn_TemporaryKey.pfx')">false</SignManifests>
   </PropertyGroup>
-  <PropertyGroup>
+  <PropertyGroup Condition="Exists('PowerPointAddIn_TemporaryKey.pfx')">
     <ManifestKeyFile>PowerPointAddIn_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>

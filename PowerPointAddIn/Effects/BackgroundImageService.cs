@@ -23,16 +23,16 @@ namespace PowerPointAddIn.Effects
 
         public void ApplyFromSelectedPicture()
         {
-            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
-            if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes || selection.ShapeRange.Count != 1)
-            {
-                throw new InvalidOperationException("Select exactly one picture first.");
-            }
-
-            PowerPoint.Shape selectedShape = selection.ShapeRange[1];
+            PowerPoint.ShapeRange shapeRange = PowerPointShapeContext.GetSelectedShapeRange(
+                application,
+                "Background Blur",
+                requireSingleShape: true);
+            PowerPoint.Shape selectedShape = shapeRange[1];
             if (!IsSupportedPicture(selectedShape))
             {
-                throw new InvalidOperationException("Background works only with one selected picture.");
+                string selectedType = PowerPointShapeContext.DescribeShape(selectedShape);
+                throw new InvalidOperationException(
+                    $"Background Blur needs one picture. The selected object is a {selectedType}.");
             }
 
             PowerPointShapeContext context = PowerPointShapeContext.FromShape(selectedShape);

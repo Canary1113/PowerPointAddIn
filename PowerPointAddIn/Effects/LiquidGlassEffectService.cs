@@ -58,7 +58,8 @@ namespace PowerPointAddIn.Effects
 
             if (changedCount == 0)
             {
-                throw new InvalidOperationException("No recoverable Glass shapes were found in the current selection.");
+                throw new InvalidOperationException(
+                    "Recover works only on Glass objects created by PPT Assistant. Select a generated Glass object or group, then click Recover.");
             }
 
             return changedCount;
@@ -76,7 +77,7 @@ namespace PowerPointAddIn.Effects
 
             if (changedCount == 0)
             {
-                throw new InvalidOperationException("No supported shapes were found in the current selection.");
+                throw new InvalidOperationException(BuildUnsupportedGlassSelectionMessage(shapeRange));
             }
 
             return changedCount;
@@ -84,13 +85,10 @@ namespace PowerPointAddIn.Effects
 
         private PowerPoint.ShapeRange GetSelectedShapeRange()
         {
-            PowerPoint.Selection selection = PowerPointShapeContext.GetActiveSelection(application);
-            if (selection == null || selection.Type != PowerPoint.PpSelectionType.ppSelectionShapes)
-            {
-                throw new InvalidOperationException("Select one or more shapes first.");
-            }
-
-            return selection.ShapeRange;
+            return PowerPointShapeContext.GetSelectedShapeRange(
+                application,
+                "Glass",
+                requireSingleShape: false);
         }
 
         private int ApplyToShape(PowerPoint.Shape shape, bool debugMode, Color? overlayColor)
@@ -166,6 +164,27 @@ namespace PowerPointAddIn.Effects
                 default:
                     return true;
             }
+        }
+
+        private static string BuildUnsupportedGlassSelectionMessage(PowerPoint.ShapeRange shapeRange)
+        {
+            if (shapeRange.Count == 1)
+            {
+                string selectedType = PowerPointShapeContext.DescribeShape(shapeRange[1]);
+                if (selectedType == "picture")
+                {
+                    return "Glass does not support pictures. Use Background Blur for pictures, or select a normal shape.";
+                }
+
+                if (selectedType == "text box or text shape")
+                {
+                    return "Glass can only use text boxes that are large enough. Select the text box border and make sure it is at least 6 pt wide and high.";
+                }
+
+                return $"Glass does not support the selected {selectedType}. Select a normal shape.";
+            }
+
+            return "Glass could not find a supported object in the selection. Select normal shapes; pictures, groups, tables, charts, SmartArt, and media are skipped.";
         }
 
         private static void ApplyStandardGlass(PowerPoint.Shape shape)
